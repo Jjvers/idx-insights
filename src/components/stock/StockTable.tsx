@@ -133,7 +133,7 @@ export function StockTable({ stocks, onSelectStock }: StockTableProps) {
     return sortDirection === 'asc' ? numA - numB : numB - numA;
   });
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
     return sortDirection === 'asc' 
       ? <ChevronUp className="w-3 h-3 text-primary" />
@@ -162,7 +162,7 @@ export function StockTable({ stocks, onSelectStock }: StockTableProps) {
                     col.align === 'center' && 'justify-center'
                   )}>
                     <span>{col.label}</span>
-                    <SortIcon field={col.key} />
+                    {renderSortIcon(col.key)}
                   </div>
                 </th>
               ))}
