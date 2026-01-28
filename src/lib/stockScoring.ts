@@ -21,27 +21,36 @@ export function calculateFundamentalScore(
     peRange: [number, number];
   }
 ): number {
-  const totalWeight = weights.safety + weights.growth + weights.value;
-  if (totalWeight === 0) return 50;
-
+  // Calculate individual metric scores (0-100)
+  
   // DER: Lower is better (inverse normalization) - Safety metric
   const derScore = normalizeInverse(stock.der, benchmarks.derRange[0], benchmarks.derRange[1]) * 100;
   
-  // ROE: Higher is better - Growth metric
-  const roeScore = normalizeMinMax(stock.roe, benchmarks.roeRange[0], benchmarks.roeRange[1]) * 100;
+  // ROE: Higher is better - Growth metric  
+  const roeScore = normalizeMinMax(Math.max(0, stock.roe), 0, benchmarks.roeRange[1]) * 100;
   
   // PBV: Lower is better for value investing (inverse)
   const pbvScore = normalizeInverse(stock.pbv, benchmarks.pbvRange[0], benchmarks.pbvRange[1]) * 100;
   
-  // P/E: Lower is better for value investing (inverse)
-  const peScore = normalizeInverse(stock.pe, benchmarks.peRange[0], benchmarks.peRange[1]) * 100;
+  // P/E: Lower is better for value investing (inverse), handle negative P/E
+  const peScore = stock.pe > 0 
+    ? normalizeInverse(stock.pe, 0, benchmarks.peRange[1]) * 100
+    : 20; // Negative P/E (loss-making) gets low value score
 
-  // Weighted average based on user preferences
-  const safetyComponent = derScore * (weights.safety / totalWeight);
-  const growthComponent = roeScore * (weights.growth / totalWeight);
-  const valueComponent = ((pbvScore + peScore) / 2) * (weights.value / totalWeight);
+  // Apply weight multipliers - higher weights = better contribution to score
+  // Weights act as BOOSTERS: higher weight makes that factor contribute more positively
+  const safetyMultiplier = 1 + (weights.safety / 100);      // 1.0 to 2.0
+  const growthMultiplier = 1 + (weights.growth / 100);      // 1.0 to 2.0
+  const valueMultiplier = 1 + (weights.value / 100);        // 1.0 to 2.0
 
-  return Math.round(safetyComponent + growthComponent + valueComponent);
+  // Weighted score calculation
+  const safetyComponent = derScore * safetyMultiplier * 0.25;
+  const growthComponent = roeScore * growthMultiplier * 0.35;
+  const valueComponent = ((pbvScore + peScore) / 2) * valueMultiplier * 0.40;
+
+  // Combine and normalize to 0-100
+  const rawScore = safetyComponent + growthComponent + valueComponent;
+  return Math.min(100, Math.max(0, Math.round(rawScore)));
 }
 
 // Calculate technical score based on volatility and momentum
@@ -54,23 +63,29 @@ export function calculateTechnicalScore(
     volumeRange: [number, number];
   }
 ): number {
-  const totalWeight = weights.safety + weights.momentum;
-  if (totalWeight === 0) return 50;
-
   // Volatility: Lower is better for safety (inverse)
   const volatilityScore = normalizeInverse(stock.volatility, benchmarks.volatilityRange[0], benchmarks.volatilityRange[1]) * 100;
   
-  // Beta: Closer to 1 is neutral, for safety lower is better
+  // Beta: Lower is better for safety (less market correlation = defensive)
   const betaScore = normalizeInverse(stock.beta, benchmarks.betaRange[0], benchmarks.betaRange[1]) * 100;
   
   // Volume ratio: Higher relative volume indicates momentum
   const volumeRatio = stock.avgVolume > 0 ? stock.volume / stock.avgVolume : 1;
   const volumeScore = normalizeMinMax(volumeRatio, 0.5, 2) * 100;
+  
+  // Price momentum: positive change is good
+  const momentumScore = normalizeMinMax(stock.changePercent, -5, 5) * 100;
 
-  const safetyComponent = ((volatilityScore + betaScore) / 2) * (weights.safety / totalWeight);
-  const momentumComponent = volumeScore * (weights.momentum / totalWeight);
+  // Apply weight multipliers
+  const safetyMultiplier = 1 + (weights.safety / 100);
+  const momentumMultiplier = 1 + (weights.momentum / 100);
 
-  return Math.round(safetyComponent + momentumComponent);
+  // Technical components
+  const stabilityComponent = ((volatilityScore + betaScore) / 2) * safetyMultiplier * 0.50;
+  const momentumComponent = ((volumeScore + momentumScore) / 2) * momentumMultiplier * 0.50;
+
+  const rawScore = stabilityComponent + momentumComponent;
+  return Math.min(100, Math.max(0, Math.round(rawScore)));
 }
 
 // Determine valuation label based on PBV and P/E
@@ -84,7 +99,7 @@ export function getValuationLabel(pbv: number, pe: number): 'Cheap' | 'Fair' | '
   if (pbv < pbvThreshold.cheap) cheapCount++;
   else if (pbv > pbvThreshold.expensive) expensiveCount++;
 
-  if (pe < peThreshold.cheap) cheapCount++;
+  if (pe > 0 && pe < peThreshold.cheap) cheapCount++;
   else if (pe > peThreshold.expensive) expensiveCount++;
 
   if (cheapCount >= 1 && expensiveCount === 0) return 'Cheap';
@@ -123,15 +138,6 @@ export function getRiskLevel(der: number, volatility: number, beta: number): 'Lo
   if (riskPoints >= 4) return 'High';
   if (riskPoints >= 2) return 'Medium';
   return 'Low';
-}
-
-// Calculate combined risk score (0-100, higher = riskier)
-export function calculateRiskScore(der: number, volatility: number, beta: number): number {
-  const derNorm = normalizeMinMax(der, 0, 3) * 40;
-  const volNorm = normalizeMinMax(volatility, 0, 5) * 35;
-  const betaNorm = normalizeMinMax(beta, 0.5, 2) * 25;
-  
-  return Math.round(derNorm + volNorm + betaNorm);
 }
 
 // Full stock scoring with all metrics
