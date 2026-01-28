@@ -104,7 +104,7 @@ export interface GoldPrediction {
   fundamentalScore: number; // 0-100
   sentimentScore: number;   // 0-100
   reasoning: string[];
-  keyLevels: {
+  keyLevels?: {             // Optional - AI may or may not provide
     support: number[];
     resistance: number[];
   };
