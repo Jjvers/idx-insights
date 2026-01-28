@@ -1,1 +1,4 @@
 project_id = "ofoyzfdhrzvstidvwcay"
+
+[functions.gold-prediction]
+verify_jwt = false
