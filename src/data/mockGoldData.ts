@@ -226,3 +226,91 @@ export const economicEvents: EconomicEvent[] = [
     description: 'China factory activity. Major gold consumer, affects demand outlook.'
   }
 ];
+
+// News & Sentiment data
+export type NewsSentimentType = 'Bullish' | 'Bearish' | 'Neutral';
+
+export interface GoldNews {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  sentiment: NewsSentimentType;
+  impact: 'High' | 'Medium' | 'Low';
+  publishedAt: Date;
+}
+
+export const mockNews: GoldNews[] = [
+  {
+    id: '1',
+    title: 'Fed Signals Potential Rate Cuts in Coming Months',
+    summary: 'Federal Reserve officials hinted at easing monetary policy as inflation shows signs of cooling, boosting gold demand as a hedge against lower yields.',
+    source: 'Reuters',
+    sentiment: 'Bullish',
+    impact: 'High',
+    publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
+  },
+  {
+    id: '2',
+    title: 'Central Banks Continue Record Gold Purchases in Q1',
+    summary: 'Global central banks added 290 tonnes of gold to reserves in Q1, led by China and India, marking the strongest first quarter on record.',
+    source: 'World Gold Council',
+    sentiment: 'Bullish',
+    impact: 'High',
+    publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000)
+  },
+  {
+    id: '3',
+    title: 'US Dollar Strengthens After Strong Jobs Report',
+    summary: 'The US Dollar Index rose 0.5% following better-than-expected employment data, creating headwinds for gold prices.',
+    source: 'Bloomberg',
+    sentiment: 'Bearish',
+    impact: 'High',
+    publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+  },
+  {
+    id: '4',
+    title: 'Gold ETF Inflows Hit 3-Month High',
+    summary: 'Physically-backed gold ETFs recorded significant inflows this week as investors seek safe-haven assets amid geopolitical uncertainties.',
+    source: 'Financial Times',
+    sentiment: 'Bullish',
+    impact: 'Medium',
+    publishedAt: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000)
+  },
+  {
+    id: '5',
+    title: 'Rising Treasury Yields Pressure Gold',
+    summary: 'US 10-year Treasury yields climbed to 4.5%, increasing the opportunity cost of holding non-yielding gold.',
+    source: 'CNBC',
+    sentiment: 'Bearish',
+    impact: 'Medium',
+    publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+  },
+  {
+    id: '6',
+    title: 'Geopolitical Tensions Boost Safe-Haven Demand',
+    summary: 'Escalating tensions in the Middle East drive investors toward gold as a safe-haven asset, supporting prices near all-time highs.',
+    source: 'Al Jazeera',
+    sentiment: 'Bullish',
+    impact: 'Medium',
+    publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+  },
+  {
+    id: '7',
+    title: 'India Gold Demand Flat Amid High Prices',
+    summary: 'Physical gold demand in India, the world\'s second largest consumer, remains subdued as record prices deter retail buyers.',
+    source: 'Economic Times',
+    sentiment: 'Neutral',
+    impact: 'Low',
+    publishedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
+  },
+  {
+    id: '8',
+    title: 'Mining Costs Rise as New Discoveries Slow',
+    summary: 'All-in sustaining costs for gold miners have increased 8% year-over-year, providing a higher floor for gold prices.',
+    source: 'Mining Journal',
+    sentiment: 'Bullish',
+    impact: 'Low',
+    publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+  }
+];
