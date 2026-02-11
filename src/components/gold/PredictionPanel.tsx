@@ -2,8 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import type { GoldPrediction, GoldInstrument, Timeframe } from '@/types/gold';
+import type { GoldInstrument, Timeframe } from '@/types/gold';
 import { useGoldPrediction } from '@/hooks/useGoldPrediction';
 import { 
   TrendingUp, TrendingDown, Minus, Brain, 
@@ -85,7 +84,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           <h3 className="text-xl font-semibold text-foreground mb-2">AI Prediction Engine</h3>
           <p className="text-sm text-muted-foreground text-center mb-6 max-w-lg">
             Generate AI-powered price predictions using technical indicators, fundamental analysis, 
-            and market sentiment. Get actionable insights with confidence scores and key price levels.
+            and market sentiment. Get probability-based signals with confidence scores.
           </p>
           <Button onClick={generatePrediction} size="lg" className="gap-2">
             <Zap className="h-4 w-4" />
@@ -106,17 +105,13 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
           </div>
           <Skeleton className="h-24 w-full" />
-          <div className="grid grid-cols-3 gap-4">
-            <Skeleton className="h-16" />
-            <Skeleton className="h-16" />
-            <Skeleton className="h-16" />
-          </div>
         </CardContent>
       </Card>
     );
@@ -143,6 +138,11 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
   const SignalIcon = signalStyles[prediction.signal].icon;
   const isPositive = prediction.predictedChange >= 0;
 
+  // Calculate probabilities from scores
+  const avgScore = (prediction.technicalScore + prediction.fundamentalScore + prediction.sentimentScore) / 3;
+  const bullishProb = Math.round(Math.min(Math.max(avgScore, 5), 95));
+  const bearishProb = 100 - bullishProb;
+
   return (
     <Card className="col-span-full border-accent/30 shadow-glow-accent">
       <CardHeader className="pb-2">
@@ -165,6 +165,45 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
         </div>
       </CardHeader>
       <CardContent>
+        {/* Probability Bar - Main Decision Metric */}
+        <div className="mb-6 p-4 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-foreground">Probability Analysis</h4>
+            <Badge className={bullishProb > 50 ? 'bg-gain text-gain-foreground' : bullishProb < 50 ? 'bg-loss text-loss-foreground' : 'bg-muted text-muted-foreground'}>
+              {prediction.signal}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-center min-w-[60px]">
+              <TrendingDown className="h-5 w-5 text-loss mx-auto mb-1" />
+              <p className="text-xl font-bold font-mono text-loss">{bearishProb}%</p>
+              <p className="text-[10px] text-muted-foreground">Bearish</p>
+            </div>
+            <div className="flex-1">
+              <div className="h-4 rounded-full overflow-hidden flex bg-muted">
+                <div 
+                  className="bg-loss h-full transition-all duration-700 rounded-l-full"
+                  style={{ width: `${bearishProb}%` }}
+                />
+                <div 
+                  className="bg-gain h-full transition-all duration-700 rounded-r-full"
+                  style={{ width: `${bullishProb}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-muted-foreground">Sell Zone</span>
+                <span className="text-[10px] text-muted-foreground">Neutral</span>
+                <span className="text-[10px] text-muted-foreground">Buy Zone</span>
+              </div>
+            </div>
+            <div className="text-center min-w-[60px]">
+              <TrendingUp className="h-5 w-5 text-gain mx-auto mb-1" />
+              <p className="text-xl font-bold font-mono text-gain">{bullishProb}%</p>
+              <p className="text-[10px] text-muted-foreground">Bullish</p>
+            </div>
+          </div>
+        </div>
+
         {/* Main Prediction Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           {/* Signal */}
@@ -184,10 +223,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
                 <div className="flex items-center gap-2">
                   <span className="text-sm opacity-90">Confidence:</span>
                   <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-white/80 rounded-full"
-                      style={{ width: `${prediction.confidence}%` }}
-                    />
+                    <div className="h-full bg-white/80 rounded-full" style={{ width: `${prediction.confidence}%` }} />
                   </div>
                   <span className="text-sm font-bold">{prediction.confidence}%</span>
                 </div>
@@ -207,7 +243,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
             <div className={`flex items-center gap-1 text-sm font-mono ${isPositive ? 'text-gain' : 'text-loss'}`}>
               {isPositive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
               {isPositive ? '+' : ''}{formatPrice(prediction.predictedChange, instrument)}
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground ml-1">
                 ({isPositive ? '+' : ''}{prediction.predictedChangePercent.toFixed(2)}%)
               </span>
             </div>
@@ -222,9 +258,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
             <p className="text-2xl font-bold font-mono text-foreground mb-1">
               {formatPrice(prediction.currentPrice, instrument)}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {instrument}
-            </p>
+            <p className="text-sm text-muted-foreground">{instrument}</p>
           </div>
 
           {/* Risk/Reward */}
@@ -236,8 +270,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
             <p className="text-2xl font-bold font-mono text-foreground mb-1">
               1:{prediction.riskReward.toFixed(1)}
             </p>
-            <Badge 
-              variant="outline"
+            <Badge variant="outline"
               className={prediction.riskReward >= 2 
                 ? 'bg-gain/10 text-gain border-gain/30' 
                 : prediction.riskReward >= 1.5 
@@ -317,7 +350,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
         <div className="mt-6 p-3 bg-muted/30 rounded-lg border border-border">
           <p className="text-xs text-muted-foreground text-center">
             <AlertTriangle className="h-3 w-3 inline mr-1" />
-            AI predictions are for informational purposes only. Not financial advice. Past performance doesn't guarantee future results.
+            AI predictions are for informational purposes only. Not financial advice.
           </p>
         </div>
       </CardContent>
