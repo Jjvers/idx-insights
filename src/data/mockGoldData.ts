@@ -4,7 +4,8 @@ import type {
   FundamentalIndicators, 
   ExpertAnalysis, 
   EconomicEvent,
-  GoldInstrument 
+  GoldInstrument,
+  CorrelatedAsset
 } from '@/types/gold';
 
 // Generate realistic OHLC data for the past N days
@@ -229,6 +230,7 @@ export const economicEvents: EconomicEvent[] = [
 
 // News & Sentiment data
 export type NewsSentimentType = 'Bullish' | 'Bearish' | 'Neutral';
+export type NewsCategory = 'Market' | 'Geopolitical' | 'Macro' | 'Demand';
 
 export interface GoldNews {
   id: string;
@@ -238,6 +240,7 @@ export interface GoldNews {
   sentiment: NewsSentimentType;
   impact: 'High' | 'Medium' | 'Low';
   publishedAt: Date;
+  category?: NewsCategory;
 }
 
 export const mockNews: GoldNews[] = [
@@ -248,7 +251,8 @@ export const mockNews: GoldNews[] = [
     source: 'Reuters',
     sentiment: 'Bullish',
     impact: 'High',
-    publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    category: 'Macro'
   },
   {
     id: '2',
@@ -257,7 +261,8 @@ export const mockNews: GoldNews[] = [
     source: 'World Gold Council',
     sentiment: 'Bullish',
     impact: 'High',
-    publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
+    category: 'Demand'
   },
   {
     id: '3',
@@ -266,7 +271,8 @@ export const mockNews: GoldNews[] = [
     source: 'Bloomberg',
     sentiment: 'Bearish',
     impact: 'High',
-    publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    category: 'Macro'
   },
   {
     id: '4',
@@ -275,7 +281,8 @@ export const mockNews: GoldNews[] = [
     source: 'Financial Times',
     sentiment: 'Bullish',
     impact: 'Medium',
-    publishedAt: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000),
+    category: 'Demand'
   },
   {
     id: '5',
@@ -284,7 +291,8 @@ export const mockNews: GoldNews[] = [
     source: 'CNBC',
     sentiment: 'Bearish',
     impact: 'Medium',
-    publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    category: 'Macro'
   },
   {
     id: '6',
@@ -293,7 +301,8 @@ export const mockNews: GoldNews[] = [
     source: 'Al Jazeera',
     sentiment: 'Bullish',
     impact: 'Medium',
-    publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    category: 'Geopolitical'
   },
   {
     id: '7',
@@ -302,7 +311,8 @@ export const mockNews: GoldNews[] = [
     source: 'Economic Times',
     sentiment: 'Neutral',
     impact: 'Low',
-    publishedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+    category: 'Demand'
   },
   {
     id: '8',
@@ -311,6 +321,123 @@ export const mockNews: GoldNews[] = [
     source: 'Mining Journal',
     sentiment: 'Bullish',
     impact: 'Low',
-    publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    category: 'Market'
+  }
+];
+
+// Geopolitical News
+export const geopoliticalNews: GoldNews[] = [
+  {
+    id: 'geo1',
+    title: 'Middle East Tensions Escalate: Iran-Israel Proxy Conflict Intensifies',
+    summary: 'Escalating military confrontation between regional powers drives flight to safety. Gold historically rallies 3-5% during acute geopolitical crises as investors seek safe haven.',
+    source: 'Al Jazeera',
+    sentiment: 'Bullish',
+    impact: 'High',
+    publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+    category: 'Geopolitical'
+  },
+  {
+    id: 'geo2',
+    title: 'US-China Trade War: New Tariffs on Tech Exports',
+    summary: 'Fresh round of technology export restrictions rattles global supply chains. Trade uncertainty weakens risk assets and strengthens gold as a monetary hedge.',
+    source: 'Reuters',
+    sentiment: 'Bullish',
+    impact: 'High',
+    publishedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+    category: 'Geopolitical'
+  },
+  {
+    id: 'geo3',
+    title: 'BRICS Nations Accelerate De-dollarization Push',
+    summary: 'BRICS summit announces new bilateral trade settlement framework bypassing USD. Central banks increasing gold reserves as alternative to dollar-denominated assets.',
+    source: 'Bloomberg',
+    sentiment: 'Bullish',
+    impact: 'High',
+    publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    category: 'Geopolitical'
+  },
+  {
+    id: 'geo4',
+    title: 'NATO Expansion: Finland-Sweden Border Exercises Begin',
+    summary: 'Increased military exercises near Russia\'s borders heighten geopolitical risk premium. Safe-haven flows moderately support gold prices.',
+    source: 'BBC News',
+    sentiment: 'Bullish',
+    impact: 'Medium',
+    publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    category: 'Geopolitical'
+  },
+  {
+    id: 'geo5',
+    title: 'Peace Talks Progress in Ukraine Conflict',
+    summary: 'Diplomatic breakthroughs reduce geopolitical risk premium, potentially reducing safe-haven demand for gold in the short term.',
+    source: 'Financial Times',
+    sentiment: 'Bearish',
+    impact: 'Medium',
+    publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    category: 'Geopolitical'
+  }
+];
+
+// Correlated commodities data (Silver & Copper as leading/lagging indicators)
+function generateCorrelatedPrices(base: number, days: number, vol: number): number[] {
+  const prices: number[] = [];
+  let p = base;
+  for (let i = 0; i < days; i++) {
+    p *= 1 + (Math.random() - 0.48) * vol;
+    prices.push(p);
+  }
+  return prices;
+}
+
+export const correlatedAssets: CorrelatedAsset[] = [
+  {
+    symbol: 'XAG/USD',
+    name: 'Silver (Spot)',
+    price: 30.45,
+    change: 0.38,
+    changePercent: 1.26,
+    correlation: 0.87,
+    lagDays: -2,
+    lagDescription: 'Leads gold by ~2 days',
+    reasoning: 'Silver sering bergerak duluan (leading indicator) karena pasar silver lebih kecil dan lebih volatile. Ketika silver breakout, gold biasanya menyusul 1-3 hari kemudian. Gold-Silver Ratio saat ini di 87.5 — di atas rata-rata historis 80, menunjukkan silver undervalued relatif terhadap gold.',
+    recentPrices: generateCorrelatedPrices(29.5, 30, 0.02)
+  },
+  {
+    symbol: 'HG',
+    name: 'Copper (COMEX)',
+    price: 4.32,
+    change: -0.05,
+    changePercent: -1.15,
+    correlation: 0.62,
+    lagDays: -5,
+    lagDescription: 'Leads gold by ~5 days',
+    reasoning: 'Copper dikenal sebagai "Dr. Copper" karena kemampuannya memprediksi kondisi ekonomi global. Ketika copper naik, ini sinyal ekonomi membaik → risk-on → gold bisa melemah. Sebaliknya, copper jatuh = fear → gold rally. Copper saat ini turun 1.15%, ini bisa jadi early warning untuk gold rally dalam 3-7 hari ke depan.',
+    recentPrices: generateCorrelatedPrices(4.2, 30, 0.025)
+  },
+  {
+    symbol: 'DXY',
+    name: 'US Dollar Index',
+    price: 103.45,
+    change: -0.32,
+    changePercent: -0.31,
+    correlation: -0.82,
+    lagDays: 0,
+    lagDescription: 'Inverse correlation (real-time)',
+    reasoning: 'DXY dan gold memiliki korelasi negatif kuat (-0.82). Dollar melemah = gold menguat karena gold dihargai dalam USD. DXY turun 0.31% hari ini — ini BULLISH untuk gold. Perhatikan level DXY 103.0 sebagai support kunci: jika tembus, gold bisa rally tajam.',
+    recentPrices: generateCorrelatedPrices(104.0, 30, 0.005)
+  },
+  {
+    symbol: 'UST10Y',
+    name: '10-Year Treasury Yield',
+    price: 4.35,
+    change: 0.03,
+    changePercent: 0.69,
+    correlation: -0.65,
+    lagDays: 1,
+    lagDescription: 'Leads gold by ~1 day',
+    reasoning: 'Yield naik = opportunity cost memegang gold lebih tinggi → bearish gold. Namun, jika yield naik karena inflasi (bukan growth), gold tetap bisa naik. Saat ini real yield (10Y - CPI) = 1.45%, masih moderate. Watch for yield curve inversion as recession signal → bullish gold.',
+    recentPrices: generateCorrelatedPrices(4.3, 30, 0.01)
   }
 ];

@@ -89,6 +89,40 @@ export type Signal = 'Strong Buy' | 'Buy' | 'Neutral' | 'Sell' | 'Strong Sell';
 export type Trend = 'Bullish' | 'Bearish' | 'Sideways';
 export type Timeframe = '1D' | '1W' | '1M' | '3M';
 
+// Correlated Commodities
+export interface CorrelatedAsset {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  correlation: number;       // -1 to 1
+  lagDays: number;           // positive = lagging, negative = leading
+  lagDescription: string;
+  reasoning: string;
+  recentPrices: number[];
+}
+
+// Scenario Analysis
+export interface PredictionScenario {
+  name: string;              // e.g. "Bullish Breakout", "Distribution Phase"
+  probability: number;       // 0-100
+  priceTarget: number;
+  description: string;
+  triggers: string[];        // What needs to happen for this scenario
+  riskLevel: 'Low' | 'Medium' | 'High';
+}
+
+// Gap Analysis
+export interface GapAnalysis {
+  hasGap: boolean;
+  gapType: 'Up' | 'Down' | 'None';
+  gapSize: number;
+  gapPercent: number;
+  filled: boolean;
+  reasoning: string;
+}
+
 // Prediction
 export interface GoldPrediction {
   instrument: GoldInstrument;
@@ -104,11 +138,21 @@ export interface GoldPrediction {
   fundamentalScore: number; // 0-100
   sentimentScore: number;   // 0-100
   reasoning: string[];
-  keyLevels?: {             // Optional - AI may or may not provide
+  indicatorReasoning?: {     // Per-indicator reasoning
+    rsi: string;
+    macd: string;
+    movingAverages: string;
+    fibonacci: string;
+    bollinger: string;
+    fundamental: string;
+  };
+  scenarios?: PredictionScenario[];  // Option A/B scenarios
+  gapAnalysis?: GapAnalysis;
+  keyLevels?: {
     support: number[];
     resistance: number[];
   };
-  riskReward: number;       // Risk/Reward ratio
+  riskReward: number;
   generatedAt: Date;
 }
 
@@ -130,7 +174,7 @@ export interface ExpertAnalysis {
 
 // Economic Events
 export type EventImpact = 'High' | 'Medium' | 'Low';
-export type EventType = 'Fed Meeting' | 'CPI Release' | 'NFP' | 'GDP' | 'PMI' | 'Retail Sales' | 'Other';
+export type EventType = 'Fed Meeting' | 'CPI Release' | 'NFP' | 'GDP' | 'PMI' | 'Retail Sales' | 'Geopolitical' | 'Other';
 
 export interface EconomicEvent {
   id: string;

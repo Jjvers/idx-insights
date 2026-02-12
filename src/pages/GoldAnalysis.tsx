@@ -11,8 +11,9 @@ import { PredictionPanel } from '@/components/gold/PredictionPanel';
 import { EconomicCalendar } from '@/components/gold/EconomicCalendar';
 import { ExpertAnalysisList } from '@/components/gold/ExpertAnalysisList';
 import { NewsSentiment } from '@/components/gold/NewsSentiment';
+import { CorrelatedAssets } from '@/components/gold/CorrelatedAssets';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 const timeframes: { value: Timeframe; label: string }[] = [
@@ -166,6 +167,10 @@ export default function GoldAnalysis() {
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Calendar</span>
             </TabsTrigger>
+            <TabsTrigger value="correlation" className="gap-1.5">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Correlation</span>
+            </TabsTrigger>
             <TabsTrigger value="experts" className="gap-1.5">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Experts</span>
@@ -178,6 +183,7 @@ export default function GoldAnalysis() {
               instrument={selectedInstrument} 
               timeframe={selectedTimeframe} 
             />
+            <CorrelatedAssets />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} />
               <TechnicalPanel instrument={selectedInstrument} />
@@ -217,6 +223,15 @@ export default function GoldAnalysis() {
               <div className="lg:col-span-2">
                 <EconomicCalendar />
               </div>
+              <FundamentalPanel />
+            </div>
+          </TabsContent>
+
+          {/* Correlation Tab */}
+          <TabsContent value="correlation" className="space-y-4 mt-4">
+            <CorrelatedAssets />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} />
               <FundamentalPanel />
             </div>
           </TabsContent>

@@ -2,12 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { GoldInstrument, Timeframe } from '@/types/gold';
+import type { GoldInstrument, Timeframe, PredictionScenario } from '@/types/gold';
 import { useGoldPrediction } from '@/hooks/useGoldPrediction';
 import { 
   TrendingUp, TrendingDown, Minus, Brain, 
   Target, AlertTriangle, CheckCircle2, Loader2, RefreshCw,
-  ArrowUpRight, ArrowDownRight, Shield, Crosshair, Zap
+  ArrowUpRight, ArrowDownRight, Shield, Crosshair, Zap,
+  BarChart3, Activity, Layers, Info, ArrowRightLeft, GitBranch
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -39,13 +40,6 @@ function ScoreBar({ label, score, icon: Icon }: { label: string; score: number; 
     return 'bg-loss';
   };
 
-  const getScoreLabel = (s: number) => {
-    if (s >= 70) return 'Strong';
-    if (s >= 50) return 'Moderate';
-    if (s >= 30) return 'Weak';
-    return 'Very Weak';
-  };
-
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center text-sm">
@@ -53,17 +47,77 @@ function ScoreBar({ label, score, icon: Icon }: { label: string; score: number; 
           {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
           <span className="text-muted-foreground">{label}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{getScoreLabel(score)}</span>
-          <span className="font-mono text-foreground font-medium">{score}</span>
-        </div>
+        <span className="font-mono text-foreground font-medium">{score}</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${getScoreColor(score)} transition-all duration-500`}
-          style={{ width: `${score}%` }}
-        />
+        <div className={`h-full ${getScoreColor(score)} transition-all duration-500`} style={{ width: `${score}%` }} />
       </div>
+    </div>
+  );
+}
+
+function ScenarioCard({ scenario, instrument, index }: { scenario: PredictionScenario; instrument: GoldInstrument; index: number }) {
+  const isBullish = scenario.name.toLowerCase().includes('bull') || scenario.name.toLowerCase().includes('accumul');
+  const riskColors = {
+    Low: 'bg-gain/10 text-gain border-gain/30',
+    Medium: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30',
+    High: 'bg-loss/10 text-loss border-loss/30'
+  };
+
+  return (
+    <div className={`p-4 rounded-xl border ${isBullish ? 'border-gain/30 bg-gain/5' : 'border-loss/30 bg-loss/5'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isBullish ? 'bg-gain/20' : 'bg-loss/20'}`}>
+            <span className="text-sm font-bold">{String.fromCharCode(65 + index)}</span>
+          </div>
+          <div>
+            <h4 className={`text-sm font-bold ${isBullish ? 'text-gain' : 'text-loss'}`}>{scenario.name}</h4>
+            <Badge variant="outline" className={riskColors[scenario.riskLevel]}>
+              Risk: {scenario.riskLevel}
+            </Badge>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className={`text-xl font-bold font-mono ${isBullish ? 'text-gain' : 'text-loss'}`}>
+            {scenario.probability}%
+          </p>
+          <p className="text-[10px] text-muted-foreground">probability</p>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{scenario.description}</p>
+
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-muted-foreground">Target:</span>
+        <span className={`font-mono text-sm font-medium ${isBullish ? 'text-gain' : 'text-loss'}`}>
+          {formatPrice(scenario.priceTarget, instrument)}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Triggers:</span>
+        {scenario.triggers.map((t, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${isBullish ? 'bg-gain' : 'bg-loss'}`} />
+            <span className="text-xs text-muted-foreground">{t}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IndicatorReasoningCard({ icon: Icon, label, reasoning, color }: { 
+  icon: React.ElementType; label: string; reasoning: string; color: string 
+}) {
+  return (
+    <div className="p-3 rounded-lg bg-muted/30 border border-border">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className={`h-4 w-4 ${color}`} />
+        <span className="text-xs font-semibold text-foreground">{label}</span>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">{reasoning}</p>
     </div>
   );
 }
@@ -83,8 +137,8 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           </div>
           <h3 className="text-xl font-semibold text-foreground mb-2">AI Prediction Engine</h3>
           <p className="text-sm text-muted-foreground text-center mb-6 max-w-lg">
-            Generate AI-powered price predictions using technical indicators, fundamental analysis, 
-            and market sentiment. Get probability-based signals with confidence scores.
+            Generate AI predictions with per-indicator reasoning, scenario analysis (A/B options), 
+            gap detection, and correlated asset signals.
           </p>
           <Button onClick={generatePrediction} size="lg" className="gap-2">
             <Zap className="h-4 w-4" />
@@ -101,15 +155,12 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin text-accent" />
-            Analyzing {instrument} Market Data...
+            Analyzing {instrument}...
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
+            <Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" />
           </div>
           <Skeleton className="h-24 w-full" />
         </CardContent>
@@ -125,8 +176,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           <p className="text-destructive font-medium mb-2">Prediction Failed</p>
           <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">{error}</p>
           <Button onClick={generatePrediction} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
+            <RefreshCw className="h-4 w-4 mr-2" />Try Again
           </Button>
         </CardContent>
       </Card>
@@ -137,8 +187,6 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
 
   const SignalIcon = signalStyles[prediction.signal].icon;
   const isPositive = prediction.predictedChange >= 0;
-
-  // Calculate probabilities from scores
   const avgScore = (prediction.technicalScore + prediction.fundamentalScore + prediction.sentimentScore) / 3;
   const bullishProb = Math.round(Math.min(Math.max(avgScore, 5), 95));
   const bearishProb = 100 - bullishProb;
@@ -156,7 +204,7 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           </CardTitle>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground">
-              Generated {formatDistanceToNow(prediction.generatedAt, { addSuffix: true })}
+              {formatDistanceToNow(prediction.generatedAt, { addSuffix: true })}
             </span>
             <Button variant="ghost" size="sm" onClick={generatePrediction} disabled={isLoading} className="h-8">
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -165,11 +213,11 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
         </div>
       </CardHeader>
       <CardContent>
-        {/* Probability Bar - Main Decision Metric */}
+        {/* Probability Bar */}
         <div className="mb-6 p-4 rounded-xl bg-card border border-border">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium text-foreground">Probability Analysis</h4>
-            <Badge className={bullishProb > 50 ? 'bg-gain text-gain-foreground' : bullishProb < 50 ? 'bg-loss text-loss-foreground' : 'bg-muted text-muted-foreground'}>
+            <Badge className={bullishProb > 50 ? 'bg-gain text-gain-foreground' : 'bg-loss text-loss-foreground'}>
               {prediction.signal}
             </Badge>
           </div>
@@ -181,14 +229,8 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
             </div>
             <div className="flex-1">
               <div className="h-4 rounded-full overflow-hidden flex bg-muted">
-                <div 
-                  className="bg-loss h-full transition-all duration-700 rounded-l-full"
-                  style={{ width: `${bearishProb}%` }}
-                />
-                <div 
-                  className="bg-gain h-full transition-all duration-700 rounded-r-full"
-                  style={{ width: `${bullishProb}%` }}
-                />
+                <div className="bg-loss h-full transition-all duration-700 rounded-l-full" style={{ width: `${bearishProb}%` }} />
+                <div className="bg-gain h-full transition-all duration-700 rounded-r-full" style={{ width: `${bullishProb}%` }} />
               </div>
               <div className="flex justify-between mt-1">
                 <span className="text-[10px] text-muted-foreground">Sell Zone</span>
@@ -204,93 +246,125 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           </div>
         </div>
 
-        {/* Main Prediction Grid */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {/* Signal */}
           <div className={`p-4 rounded-xl bg-gradient-to-br ${signalStyles[prediction.signal].gradient} relative overflow-hidden`}>
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
                 <SignalIcon className={`h-6 w-6 ${signalStyles[prediction.signal].text}`} />
-                <span className={`text-xl font-bold ${signalStyles[prediction.signal].text}`}>
-                  {prediction.signal}
-                </span>
+                <span className={`text-xl font-bold ${signalStyles[prediction.signal].text}`}>{prediction.signal}</span>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm opacity-90">
-                  Trend: <span className="font-medium">{prediction.trend}</span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm opacity-90">Confidence:</span>
-                  <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white/80 rounded-full" style={{ width: `${prediction.confidence}%` }} />
-                  </div>
-                  <span className="text-sm font-bold">{prediction.confidence}%</span>
+              <p className="text-sm opacity-90">Trend: <span className="font-medium">{prediction.trend}</span></p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm opacity-90">Confidence:</span>
+                <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white/80 rounded-full" style={{ width: `${prediction.confidence}%` }} />
                 </div>
+                <span className="text-sm font-bold">{prediction.confidence}%</span>
               </div>
             </div>
           </div>
 
-          {/* Price Target */}
           <div className="p-4 rounded-xl bg-card border border-border">
             <div className="flex items-center gap-2 mb-2">
               <Target className="h-4 w-4 text-accent" />
               <span className="text-sm text-muted-foreground">Price Target</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-foreground mb-1">
-              {formatPrice(prediction.predictedPrice, instrument)}
-            </p>
+            <p className="text-2xl font-bold font-mono text-foreground mb-1">{formatPrice(prediction.predictedPrice, instrument)}</p>
             <div className={`flex items-center gap-1 text-sm font-mono ${isPositive ? 'text-gain' : 'text-loss'}`}>
               {isPositive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-              {isPositive ? '+' : ''}{formatPrice(prediction.predictedChange, instrument)}
-              <span className="text-muted-foreground ml-1">
-                ({isPositive ? '+' : ''}{prediction.predictedChangePercent.toFixed(2)}%)
-              </span>
+              {isPositive ? '+' : ''}{prediction.predictedChangePercent.toFixed(2)}%
             </div>
           </div>
 
-          {/* Current Price */}
           <div className="p-4 rounded-xl bg-card border border-border">
             <div className="flex items-center gap-2 mb-2">
               <Crosshair className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Current Price</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-foreground mb-1">
-              {formatPrice(prediction.currentPrice, instrument)}
-            </p>
+            <p className="text-2xl font-bold font-mono text-foreground mb-1">{formatPrice(prediction.currentPrice, instrument)}</p>
             <p className="text-sm text-muted-foreground">{instrument}</p>
           </div>
 
-          {/* Risk/Reward */}
           <div className="p-4 rounded-xl bg-card border border-border">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="h-4 w-4 text-accent" />
               <span className="text-sm text-muted-foreground">Risk/Reward</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-foreground mb-1">
-              1:{prediction.riskReward.toFixed(1)}
-            </p>
-            <Badge variant="outline"
-              className={prediction.riskReward >= 2 
-                ? 'bg-gain/10 text-gain border-gain/30' 
-                : prediction.riskReward >= 1.5 
-                  ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
-                  : 'bg-loss/10 text-loss border-loss/30'
-              }
-            >
-              {prediction.riskReward >= 2 ? 'Favorable' : prediction.riskReward >= 1.5 ? 'Moderate' : 'Unfavorable'}
+            <p className="text-2xl font-bold font-mono text-foreground mb-1">1:{prediction.riskReward.toFixed(1)}</p>
+            <Badge variant="outline" className={prediction.riskReward >= 2 ? 'bg-gain/10 text-gain border-gain/30' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'}>
+              {prediction.riskReward >= 2 ? 'Favorable' : 'Moderate'}
             </Badge>
           </div>
         </div>
 
+        {/* Scenarios A/B */}
+        {prediction.scenarios && prediction.scenarios.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <GitBranch className="h-4 w-4 text-accent" />
+              Scenario Analysis (Option A vs B)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {prediction.scenarios.map((scenario, i) => (
+                <ScenarioCard key={i} scenario={scenario} instrument={instrument} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Gap Analysis */}
+        {prediction.gapAnalysis && prediction.gapAnalysis.hasGap && (
+          <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
+            <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+              <ArrowRightLeft className="h-4 w-4 text-accent" />
+              Gap Analysis (Market Open/Close)
+            </h4>
+            <div className="flex items-center gap-4 mb-2">
+              <Badge className={prediction.gapAnalysis.gapType === 'Up' ? 'bg-gain text-gain-foreground' : 'bg-loss text-loss-foreground'}>
+                {prediction.gapAnalysis.gapType} Gap
+              </Badge>
+              <span className="font-mono text-sm text-foreground">
+                {formatPrice(prediction.gapAnalysis.gapSize, instrument)} ({prediction.gapAnalysis.gapPercent.toFixed(3)}%)
+              </span>
+              <Badge variant="outline">
+                {prediction.gapAnalysis.filled ? '✅ Filled' : '⏳ Unfilled'}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <Info className="h-3 w-3 inline mr-1" />
+              {prediction.gapAnalysis.reasoning}
+            </p>
+          </div>
+        )}
+
         {/* Scores */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 p-4 bg-muted/30 rounded-xl">
-          <ScoreBar label="Technical Score" score={prediction.technicalScore} icon={TrendingUp} />
-          <ScoreBar label="Fundamental Score" score={prediction.fundamentalScore} icon={Shield} />
-          <ScoreBar label="Sentiment Score" score={prediction.sentimentScore} icon={Brain} />
+          <ScoreBar label="Technical" score={prediction.technicalScore} icon={Activity} />
+          <ScoreBar label="Fundamental" score={prediction.fundamentalScore} icon={Shield} />
+          <ScoreBar label="Sentiment" score={prediction.sentimentScore} icon={Brain} />
         </div>
 
-        {/* Reasoning */}
+        {/* Indicator Reasoning */}
+        {prediction.indicatorReasoning && (
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Info className="h-4 w-4 text-accent" />
+              Reasoning per Indicator (Kenapa?)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <IndicatorReasoningCard icon={Activity} label="RSI (Momentum)" reasoning={prediction.indicatorReasoning.rsi} color="text-accent" />
+              <IndicatorReasoningCard icon={BarChart3} label="MACD (Konfirmasi)" reasoning={prediction.indicatorReasoning.macd} color="text-gain" />
+              <IndicatorReasoningCard icon={TrendingUp} label="Moving Averages (Tren)" reasoning={prediction.indicatorReasoning.movingAverages} color="text-loss" />
+              <IndicatorReasoningCard icon={Layers} label="Fibonacci (Entry Level)" reasoning={prediction.indicatorReasoning.fibonacci} color="text-warning" />
+              <IndicatorReasoningCard icon={Target} label="Bollinger Bands (Volatilitas)" reasoning={prediction.indicatorReasoning.bollinger} color="text-muted-foreground" />
+              <IndicatorReasoningCard icon={Shield} label="Fundamental (Makro)" reasoning={prediction.indicatorReasoning.fundamental} color="text-accent" />
+            </div>
+          </div>
+        )}
+
+        {/* Analysis Summary */}
         <div className="mb-6">
           <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-accent" />
@@ -313,32 +387,26 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="p-4 rounded-lg bg-gain/5 border border-gain/20">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-gain" />
-                Support Levels
+                <div className="w-2 h-2 rounded-full bg-gain" />Support Levels
               </p>
               <div className="space-y-2">
                 {prediction.keyLevels.support.map((level, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">S{i + 1}</span>
-                    <span className="font-mono text-sm font-medium text-gain">
-                      {formatPrice(level, instrument)}
-                    </span>
+                    <span className="font-mono text-sm font-medium text-gain">{formatPrice(level, instrument)}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div className="p-4 rounded-lg bg-loss/5 border border-loss/20">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-loss" />
-                Resistance Levels
+                <div className="w-2 h-2 rounded-full bg-loss" />Resistance Levels
               </p>
               <div className="space-y-2">
                 {prediction.keyLevels.resistance.map((level, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">R{i + 1}</span>
-                    <span className="font-mono text-sm font-medium text-loss">
-                      {formatPrice(level, instrument)}
-                    </span>
+                    <span className="font-mono text-sm font-medium text-loss">{formatPrice(level, instrument)}</span>
                   </div>
                 ))}
               </div>
@@ -346,7 +414,6 @@ export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps)
           </div>
         )}
 
-        {/* Disclaimer */}
         <div className="mt-6 p-3 bg-muted/30 rounded-lg border border-border">
           <p className="text-xs text-muted-foreground text-center">
             <AlertTriangle className="h-3 w-3 inline mr-1" />
