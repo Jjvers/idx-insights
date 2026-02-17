@@ -184,3 +184,10 @@
     background-position: -200% 0;
   }
 }
+
+/* Print styles for Requirements PDF */
+@media print {
+  body { background: white !important; }
+  @page { size: A4; margin: 15mm; }
+  .print\\:break-after-page { break-after: page; }
+}
