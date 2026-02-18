@@ -12,9 +12,9 @@ import { EconomicCalendar } from '@/components/gold/EconomicCalendar';
 import { ExpertAnalysisList } from '@/components/gold/ExpertAnalysisList';
 import { NewsSentiment } from '@/components/gold/NewsSentiment';
 import { CorrelatedAssets } from '@/components/gold/CorrelatedAssets';
+import { useGoldPrices } from '@/hooks/useGoldPrices';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2 } from 'lucide-react';
-import { NavLink } from '@/components/NavLink';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
@@ -26,6 +26,7 @@ const timeframes: { value: Timeframe; label: string }[] = [
 export default function GoldAnalysis() {
   const [selectedInstrument, setSelectedInstrument] = useState<GoldInstrument>('XAU/USD');
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('1W');
+  const { prices: livePrices, isLoading: pricesLoading, refetch: refetchPrices } = useGoldPrices();
   const [showIndicators, setShowIndicators] = useState({
     sma20: true,
     sma50: true,
@@ -49,14 +50,16 @@ export default function GoldAnalysis() {
                 <h1 className="text-lg font-bold text-foreground leading-tight">Gold Analysis</h1>
               </div>
 
-              <nav className="hidden md:flex items-center gap-1">
-                <NavLink to="/" className="px-3 py-1.5 text-sm text-foreground bg-secondary rounded-md">
-                  Gold
-                </NavLink>
-                <NavLink to="/stocks" className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  IDX Stocks
-                </NavLink>
-              </nav>
+              {livePrices && (
+                <div className="hidden md:flex items-center gap-3 text-xs font-mono">
+                  <span className="text-muted-foreground">XAU: <span className="text-foreground font-semibold">${livePrices.XAU.toFixed(2)}</span></span>
+                  <span className="text-muted-foreground">XAG: <span className="text-foreground">${livePrices.XAG.toFixed(2)}</span></span>
+                  <span className="text-muted-foreground">Au/Ag: <span className="text-foreground">{livePrices.goldSilverRatio.toFixed(1)}</span></span>
+                  <button onClick={refetchPrices} className="p-1 hover:bg-secondary rounded transition-colors">
+                    <RefreshCw className={`h-3 w-3 text-muted-foreground ${pricesLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Timeframe Selector */}
@@ -141,6 +144,8 @@ export default function GoldAnalysis() {
           <GoldPriceCards 
             selectedInstrument={selectedInstrument}
             onSelectInstrument={setSelectedInstrument}
+            livePrices={livePrices}
+            isLoading={pricesLoading}
           />
         </section>
 
