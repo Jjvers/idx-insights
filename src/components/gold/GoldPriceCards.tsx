@@ -22,21 +22,26 @@ const formatPrice = (price: number): string => {
 };
 
 export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePrices, isLoading }: GoldPriceCardsProps) {
-  const prices = { ...currentPrices };
+  // Build prices from live data when available, scaling O/H/L proportionally
+  const prices: Record<GoldInstrument, GoldPrice> = { ...currentPrices };
   
   if (livePrices) {
-    // Override XAU with live data
-    prices['XAU/USD'] = {
-      ...prices['XAU/USD'],
-      price: livePrices.XAU,
-      timestamp: new Date(livePrices.timestamp * 1000),
+    // For each instrument, scale all values proportionally to live price
+    const scaleInstrument = (instrument: GoldInstrument, livePrice: number) => {
+      const mock = currentPrices[instrument];
+      const scale = livePrice / mock.price;
+      prices[instrument] = {
+        ...mock,
+        price: livePrice,
+        open: mock.open * scale,
+        high: mock.high * scale,
+        low: mock.low * scale,
+        change: mock.change * scale,
+        timestamp: new Date(livePrices.timestamp * 1000),
+      };
     };
-    // Override XAG with live data
-    prices['XAG/USD'] = {
-      ...prices['XAG/USD'],
-      price: livePrices.XAG,
-      timestamp: new Date(livePrices.timestamp * 1000),
-    };
+    scaleInstrument('XAU/USD', livePrices.XAU);
+    scaleInstrument('XAG/USD', livePrices.XAG);
   }
 
   return (

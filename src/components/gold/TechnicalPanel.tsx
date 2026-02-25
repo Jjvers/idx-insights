@@ -9,6 +9,7 @@ import { TrendingUp, TrendingDown, Minus, Activity, BarChart3 } from 'lucide-rea
 
 interface TechnicalPanelProps {
   instrument: GoldInstrument;
+  livePrice?: number;
 }
 
 function IndicatorRow({ 
@@ -106,8 +107,8 @@ function GaugeIndicator({
 }
 
 export const TechnicalPanel = forwardRef<HTMLDivElement, TechnicalPanelProps>(
-  function TechnicalPanel({ instrument }, ref) {
-    const ohlcData = getOHLCData(instrument);
+  function TechnicalPanel({ instrument, livePrice }, ref) {
+    const ohlcData = getOHLCData(instrument, livePrice);
     const currentPrice = ohlcData[ohlcData.length - 1].close;
     const indicators = useMemo(() => calculateAllIndicators(ohlcData), [ohlcData]);
     const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
