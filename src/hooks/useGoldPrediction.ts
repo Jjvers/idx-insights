@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GoldPrediction, GoldInstrument, Timeframe, OHLC } from '@/types/gold';
+import type { GoldPrediction, GoldInstrument, Timeframe } from '@/types/gold';
 import { getGoldPrediction } from '@/lib/api/goldPrediction';
 import { calculateAllIndicators } from '@/lib/technicalIndicators';
 import { getOHLCData, fundamentalIndicators } from '@/data/mockGoldData';
 import { useToast } from '@/hooks/use-toast';
 
-export function useGoldPrediction(instrument: GoldInstrument, timeframe: Timeframe) {
+export function useGoldPrediction(instrument: GoldInstrument, timeframe: Timeframe, livePrice?: number) {
   const [prediction, setPrediction] = useState<GoldPrediction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,7 @@ export function useGoldPrediction(instrument: GoldInstrument, timeframe: Timefra
     setError(null);
 
     try {
-      const ohlcData = getOHLCData(instrument);
+      const ohlcData = getOHLCData(instrument, livePrice);
       const technicalData = calculateAllIndicators(ohlcData);
       const currentPrice = ohlcData[ohlcData.length - 1].close;
       const recentPrices = ohlcData.slice(-30).map(d => d.close);
@@ -42,7 +42,7 @@ export function useGoldPrediction(instrument: GoldInstrument, timeframe: Timefra
     } finally {
       setIsLoading(false);
     }
-  }, [instrument, timeframe, toast]);
+  }, [instrument, timeframe, livePrice, toast]);
 
   return {
     prediction,

@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { mockNews, geopoliticalNews, type GoldNews, type NewsCategory } from '@/data/mockGoldData';
+import { useGoldNews, type AINewsItem } from '@/hooks/useGoldNews';
 import { formatDistanceToNow } from 'date-fns';
-import { Newspaper, TrendingUp, TrendingDown, Minus, Globe, Shield, BarChart3, Users } from 'lucide-react';
+import { Newspaper, TrendingUp, TrendingDown, Minus, Globe, Shield, BarChart3, Users, Loader2, RefreshCw, Zap } from 'lucide-react';
 
 const sentimentStyles = {
   Bullish: { icon: TrendingUp, color: 'text-gain', bg: 'bg-gain/10 border-gain/30' },
@@ -21,10 +22,21 @@ const categoryIcons: Record<string, React.ElementType> = {
 
 type FilterCategory = 'All' | NewsCategory | 'Geopolitical';
 
-function NewsCard({ news }: { news: GoldNews }) {
-  const style = sentimentStyles[news.sentiment];
+interface NewsSentimentProps {
+  goldPrice?: number;
+  silverPrice?: number;
+}
+
+function NewsCard({ news }: { news: GoldNews | AINewsItem }) {
+  const sentiment = news.sentiment as keyof typeof sentimentStyles;
+  const style = sentimentStyles[sentiment];
   const SentimentIcon = style.icon;
-  const CategoryIcon = categoryIcons[news.category || 'Market'] || Newspaper;
+  const category = 'category' in news ? (news.category || 'Market') : 'Market';
+  const CategoryIcon = categoryIcons[category] || Newspaper;
+
+  const publishedAt = 'publishedAt' in news 
+    ? news.publishedAt 
+    : new Date(Date.now() - ('hoursAgo' in news ? (news as AINewsItem).hoursAgo * 60 * 60 * 1000 : 0));
 
   return (
     <div className={`p-3 rounded-lg border transition-colors hover:border-accent/40 ${style.bg}`}>
@@ -34,13 +46,11 @@ function NewsCard({ news }: { news: GoldNews }) {
           <Badge variant="outline" className="text-[10px] h-5">
             {news.source}
           </Badge>
-          {news.category && (
-            <Badge variant="outline" className="text-[10px] h-5 bg-accent/10 text-accent border-accent/30">
-              {news.category}
-            </Badge>
-          )}
+          <Badge variant="outline" className="text-[10px] h-5 bg-accent/10 text-accent border-accent/30">
+            {category}
+          </Badge>
           <span className="text-[10px] text-muted-foreground">
-            {formatDistanceToNow(news.publishedAt, { addSuffix: true })}
+            {formatDistanceToNow(publishedAt, { addSuffix: true })}
           </span>
         </div>
         <div className={`flex items-center gap-1 ${style.color}`}>
@@ -63,22 +73,34 @@ function NewsCard({ news }: { news: GoldNews }) {
   );
 }
 
-export function NewsSentiment() {
+export function NewsSentiment({ goldPrice, silverPrice }: NewsSentimentProps) {
   const [filter, setFilter] = useState<FilterCategory>('All');
+  const { news: aiNews, isLoading: aiLoading, fetchNews } = useGoldNews();
 
-  const allNews = [...mockNews, ...geopoliticalNews].sort(
-    (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
-  );
+  // Use AI news if available, otherwise fall back to mock
+  const hasAINews = aiNews.length > 0;
+  
+  const allNews: (GoldNews | AINewsItem)[] = hasAINews 
+    ? aiNews 
+    : [...mockNews, ...geopoliticalNews].sort(
+        (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
+      );
 
   const filteredNews = filter === 'All'
     ? allNews
-    : allNews.filter(n => n.category === filter);
+    : allNews.filter(n => {
+        const cat = 'category' in n ? n.category : undefined;
+        return cat === filter;
+      });
 
   const bullishCount = allNews.filter(n => n.sentiment === 'Bullish').length;
   const bearishCount = allNews.filter(n => n.sentiment === 'Bearish').length;
   const total = allNews.length;
   const sentimentScore = total > 0 ? Math.round((bullishCount / total) * 100) : 50;
-  const geoCount = allNews.filter(n => n.category === 'Geopolitical').length;
+  const geoCount = allNews.filter(n => {
+    const cat = 'category' in n ? n.category : undefined;
+    return cat === 'Geopolitical';
+  }).length;
 
   const filters: { value: FilterCategory; label: string; icon?: React.ElementType }[] = [
     { value: 'All', label: 'All' },
@@ -95,8 +117,29 @@ export function NewsSentiment() {
           <CardTitle className="flex items-center gap-2 text-lg">
             <Newspaper className="h-5 w-5 text-accent" />
             News & Sentiment
+            {hasAINews && (
+              <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+                AI Generated
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => fetchNews(goldPrice, silverPrice)}
+              disabled={aiLoading}
+            >
+              {aiLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : hasAINews ? (
+                <RefreshCw className="h-3 w-3" />
+              ) : (
+                <Zap className="h-3 w-3" />
+              )}
+              {hasAINews ? 'Refresh' : 'Get Live News'}
+            </Button>
             <div className="flex items-center gap-1 text-xs">
               <div className="w-2 h-2 rounded-full bg-gain" />
               <span className="text-muted-foreground">{bullishCount}</span>
@@ -139,11 +182,20 @@ export function NewsSentiment() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-          {filteredNews.map(news => (
-            <NewsCard key={news.id} news={news} />
-          ))}
-          {filteredNews.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">No news in this category</p>
+          {aiLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-accent mb-3" />
+              <p className="text-sm text-muted-foreground">Generating AI news analysis...</p>
+            </div>
+          ) : (
+            <>
+              {filteredNews.map((news, idx) => (
+                <NewsCard key={'id' in news ? news.id : idx} news={news} />
+              ))}
+              {filteredNews.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">No news in this category</p>
+              )}
+            </>
           )}
         </div>
       </CardContent>

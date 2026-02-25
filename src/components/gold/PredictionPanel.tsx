@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 interface PredictionPanelProps {
   instrument: GoldInstrument;
   timeframe: Timeframe;
+  livePrice?: number;
 }
 
 const signalStyles = {
@@ -119,8 +120,8 @@ function IndicatorReasoningCard({ icon: Icon, label, reasoning, color }: {
   );
 }
 
-export function PredictionPanel({ instrument, timeframe }: PredictionPanelProps) {
-  const { prediction, isLoading, error, generatePrediction } = useGoldPrediction(instrument, timeframe);
+export function PredictionPanel({ instrument, timeframe, livePrice }: PredictionPanelProps) {
+  const { prediction, isLoading, error, generatePrediction } = useGoldPrediction(instrument, timeframe, livePrice);
 
   if (!prediction && !isLoading) {
     return (
