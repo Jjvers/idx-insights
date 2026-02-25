@@ -25,10 +25,7 @@ const signalStyles = {
   'Strong Sell': { bg: 'bg-loss', text: 'text-loss-foreground', icon: TrendingDown, gradient: 'from-loss to-loss/80' }
 };
 
-const formatPrice = (price: number, instrument: GoldInstrument): string => {
-  if (instrument === 'ANTAM') {
-    return `Rp ${price.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
-  }
+const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 

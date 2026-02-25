@@ -132,9 +132,6 @@ export const TechnicalPanel = forwardRef<HTMLDivElement, TechnicalPanelProps>(
     };
 
     const formatValue = (value: number): string => {
-      if (instrument === 'ANTAM') {
-        return `Rp ${value.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
-      }
       return `$${value.toFixed(2)}`;
     };
 

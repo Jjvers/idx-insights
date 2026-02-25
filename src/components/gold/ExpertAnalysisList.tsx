@@ -18,10 +18,7 @@ const signalColors: Record<Signal, string> = {
   'Strong Sell': 'bg-loss text-loss-foreground'
 };
 
-const formatPrice = (price: number, instrument: GoldInstrument): string => {
-  if (instrument === 'ANTAM') {
-    return `Rp ${price.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
-  }
+const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 

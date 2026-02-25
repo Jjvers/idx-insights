@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { GoldInstrument, GoldPrice } from '@/types/gold';
 import { currentPrices } from '@/data/mockGoldData';
-import { TrendingUp, TrendingDown, DollarSign, Coins, BarChart3, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Coins, Loader2 } from 'lucide-react';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
 
 interface GoldPriceCardsProps {
@@ -14,36 +14,39 @@ interface GoldPriceCardsProps {
 
 const instrumentLabels: Record<GoldInstrument, { name: string; description: string; icon: React.ReactNode }> = {
   'XAU/USD': { name: 'XAU/USD', description: 'Spot Gold', icon: <DollarSign className="h-5 w-5" /> },
-  'GOLD_FUTURES': { name: 'Gold Futures', description: 'COMEX GC', icon: <BarChart3 className="h-5 w-5" /> },
-  'ANTAM': { name: 'Antam', description: 'Emas Indonesia', icon: <Coins className="h-5 w-5" /> },
+  'XAG/USD': { name: 'XAG/USD', description: 'Spot Silver', icon: <Coins className="h-5 w-5" /> },
 };
 
-const formatPrice = (price: number, instrument: GoldInstrument): string => {
-  if (instrument === 'ANTAM') {
-    return `Rp ${price.toLocaleString('id-ID')}`;
-  }
+const formatPrice = (price: number): string => {
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePrices, isLoading }: GoldPriceCardsProps) {
-  // Merge live prices into current prices when available
   const prices = { ...currentPrices };
+  
   if (livePrices) {
+    // Override XAU with live data
     prices['XAU/USD'] = {
       ...prices['XAU/USD'],
       price: livePrices.XAU,
       timestamp: new Date(livePrices.timestamp * 1000),
     };
+    // Override XAG with live data
+    prices['XAG/USD'] = {
+      ...prices['XAG/USD'],
+      price: livePrices.XAG,
+      timestamp: new Date(livePrices.timestamp * 1000),
+    };
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {(Object.keys(prices) as GoldInstrument[]).map((instrument) => {
         const price = prices[instrument];
         const info = instrumentLabels[instrument];
         const isSelected = instrument === selectedInstrument;
         const isPositive = price.change >= 0;
-        const isLive = livePrices && instrument === 'XAU/USD';
+        const isLive = !!livePrices;
 
         return (
           <Card 
@@ -80,7 +83,7 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
               </div>
               
               <div className="mt-3">
-                {isLoading && instrument === 'XAU/USD' ? (
+                {isLoading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     <span className="text-muted-foreground text-sm">Loading live price...</span>
@@ -88,7 +91,7 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                 ) : (
                   <>
                     <p className="text-2xl font-bold font-mono text-foreground">
-                      {formatPrice(price.price, instrument)}
+                      {formatPrice(price.price)}
                     </p>
                     <div className={`flex items-center gap-1 mt-1 ${isPositive ? 'text-gain' : 'text-loss'}`}>
                       {isPositive ? (
@@ -97,7 +100,7 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                         <TrendingDown className="h-4 w-4" />
                       )}
                       <span className="font-mono text-sm">
-                        {isPositive ? '+' : ''}{formatPrice(price.change, instrument)} ({isPositive ? '+' : ''}{price.changePercent.toFixed(2)}%)
+                        {isPositive ? '+' : ''}{formatPrice(price.change)} ({isPositive ? '+' : ''}{price.changePercent.toFixed(2)}%)
                       </span>
                     </div>
                   </>
@@ -107,15 +110,15 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
               <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
                 <div>
                   <p className="text-xs text-muted-foreground">Open</p>
-                  <p className="font-mono text-sm">{formatPrice(price.open, instrument)}</p>
+                  <p className="font-mono text-sm">{formatPrice(price.open)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">High</p>
-                  <p className="font-mono text-sm text-gain">{formatPrice(price.high, instrument)}</p>
+                  <p className="font-mono text-sm text-gain">{formatPrice(price.high)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Low</p>
-                  <p className="font-mono text-sm text-loss">{formatPrice(price.low, instrument)}</p>
+                  <p className="font-mono text-sm text-loss">{formatPrice(price.low)}</p>
                 </div>
               </div>
             </CardContent>

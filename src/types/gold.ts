@@ -1,5 +1,5 @@
 // Gold instrument types
-export type GoldInstrument = 'XAU/USD' | 'GOLD_FUTURES' | 'ANTAM';
+export type GoldInstrument = 'XAU/USD' | 'XAG/USD';
 
 export interface GoldPrice {
   instrument: GoldInstrument;

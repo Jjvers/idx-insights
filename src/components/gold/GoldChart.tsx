@@ -19,6 +19,7 @@ import {
 
 interface GoldChartProps {
   instrument: GoldInstrument;
+  livePrice?: number;
   showIndicators?: {
     sma20?: boolean;
     sma50?: boolean;
@@ -32,10 +33,7 @@ interface GoldChartProps {
 type ChartType = 'area' | 'candle' | 'line';
 type ChartPeriod = '1M' | '3M' | '6M' | '1Y';
 
-const formatPrice = (price: number, instrument: GoldInstrument): string => {
-  if (instrument === 'ANTAM') {
-    return `Rp ${price.toLocaleString('id-ID')}`;
-  }
+const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toFixed(2)}`;
 };
 
@@ -80,13 +78,13 @@ const Candlestick = (props: any) => {
   );
 };
 
-export function GoldChart({ instrument, showIndicators = {} }: GoldChartProps) {
+export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldChartProps) {
   const [chartType, setChartType] = useState<ChartType>('area');
   const [period, setPeriod] = useState<ChartPeriod>('3M');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
   
-  const ohlcData = getOHLCData(instrument);
+  const ohlcData = getOHLCData(instrument, livePrice);
   const indicators = useMemo(() => calculateAllIndicators(ohlcData), [ohlcData]);
   const currentPrice = ohlcData[ohlcData.length - 1].close;
   const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
@@ -419,7 +417,7 @@ export function GoldChart({ instrument, showIndicators = {} }: GoldChartProps) {
                 domain={['auto', 'auto']}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickLine={{ stroke: 'hsl(var(--border))' }}
-                tickFormatter={(value) => instrument === 'ANTAM' ? `${(value / 1000000).toFixed(1)}M` : value.toFixed(0)}
+                tickFormatter={(value) => value.toFixed(0)}
                 width={60}
               />
               <Tooltip content={<CustomTooltip />} />
