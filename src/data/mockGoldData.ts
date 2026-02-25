@@ -17,7 +17,6 @@ function generateOHLC(basePrice: number, days: number, volatility: number = 0.01
     const date = new Date();
     date.setDate(date.getDate() - i);
     
-    // Add some trend + randomness
     const trend = Math.sin(i / 10) * 0.002;
     const change = (Math.random() - 0.5) * 2 * volatility + trend;
     price = price * (1 + change);
@@ -37,13 +36,10 @@ function generateOHLC(basePrice: number, days: number, volatility: number = 0.01
 // XAU/USD - Spot Gold (USD per troy ounce)
 export const xauUsdData: OHLC[] = generateOHLC(2650, 90, 0.012);
 
-// Gold Futures (GC)
-export const goldFuturesData: OHLC[] = generateOHLC(2670, 90, 0.013);
+// XAG/USD - Spot Silver (USD per troy ounce)
+export const xagUsdData: OHLC[] = generateOHLC(30, 90, 0.018);
 
-// Antam Gold (IDR per gram) - local Indonesian gold
-export const antamData: OHLC[] = generateOHLC(1350000, 90, 0.008);
-
-// Current prices
+// Current prices (will be overridden by live API data)
 export const currentPrices: Record<GoldInstrument, GoldPrice> = {
   'XAU/USD': {
     instrument: 'XAU/USD',
@@ -56,36 +52,35 @@ export const currentPrices: Record<GoldInstrument, GoldPrice> = {
     volume: xauUsdData[xauUsdData.length - 1].volume,
     timestamp: new Date()
   },
-  'GOLD_FUTURES': {
-    instrument: 'GOLD_FUTURES',
-    price: goldFuturesData[goldFuturesData.length - 1].close,
-    change: goldFuturesData[goldFuturesData.length - 1].close - goldFuturesData[goldFuturesData.length - 2].close,
-    changePercent: ((goldFuturesData[goldFuturesData.length - 1].close - goldFuturesData[goldFuturesData.length - 2].close) / goldFuturesData[goldFuturesData.length - 2].close) * 100,
-    high: goldFuturesData[goldFuturesData.length - 1].high,
-    low: goldFuturesData[goldFuturesData.length - 1].low,
-    open: goldFuturesData[goldFuturesData.length - 1].open,
-    volume: goldFuturesData[goldFuturesData.length - 1].volume,
-    timestamp: new Date()
-  },
-  'ANTAM': {
-    instrument: 'ANTAM',
-    price: antamData[antamData.length - 1].close,
-    change: antamData[antamData.length - 1].close - antamData[antamData.length - 2].close,
-    changePercent: ((antamData[antamData.length - 1].close - antamData[antamData.length - 2].close) / antamData[antamData.length - 2].close) * 100,
-    high: antamData[antamData.length - 1].high,
-    low: antamData[antamData.length - 1].low,
-    open: antamData[antamData.length - 1].open,
-    volume: antamData[antamData.length - 1].volume,
+  'XAG/USD': {
+    instrument: 'XAG/USD',
+    price: xagUsdData[xagUsdData.length - 1].close,
+    change: xagUsdData[xagUsdData.length - 1].close - xagUsdData[xagUsdData.length - 2].close,
+    changePercent: ((xagUsdData[xagUsdData.length - 1].close - xagUsdData[xagUsdData.length - 2].close) / xagUsdData[xagUsdData.length - 2].close) * 100,
+    high: xagUsdData[xagUsdData.length - 1].high,
+    low: xagUsdData[xagUsdData.length - 1].low,
+    open: xagUsdData[xagUsdData.length - 1].open,
+    volume: xagUsdData[xagUsdData.length - 1].volume,
     timestamp: new Date()
   }
 };
 
-export function getOHLCData(instrument: GoldInstrument): OHLC[] {
-  switch (instrument) {
-    case 'XAU/USD': return xauUsdData;
-    case 'GOLD_FUTURES': return goldFuturesData;
-    case 'ANTAM': return antamData;
-  }
+// Scale OHLC data so the last candle's close matches live price
+export function getOHLCData(instrument: GoldInstrument, livePrice?: number): OHLC[] {
+  const raw = instrument === 'XAU/USD' ? xauUsdData : xagUsdData;
+  if (!livePrice) return raw;
+  
+  const lastClose = raw[raw.length - 1].close;
+  const scale = livePrice / lastClose;
+  
+  return raw.map(candle => ({
+    date: candle.date,
+    open: candle.open * scale,
+    high: candle.high * scale,
+    low: candle.low * scale,
+    close: candle.close * scale,
+    volume: candle.volume
+  }));
 }
 
 // Fundamental indicators (macro data)
@@ -131,24 +126,24 @@ export const expertAnalyses: ExpertAnalysis[] = [
     id: '3',
     expertName: 'Nicky Shiels',
     expertTitle: 'Head of Metals Strategy, MKS PAMP',
-    instrument: 'GOLD_FUTURES',
-    signal: 'Neutral',
-    targetPrice: 2700,
-    timeframe: '1W',
-    analysis: 'Short-term consolidation expected after the recent rally. Wait for a pullback to $2,600 support before adding positions. Geopolitical risks remain elevated.',
+    instrument: 'XAG/USD',
+    signal: 'Buy',
+    targetPrice: 35,
+    timeframe: '1M',
+    analysis: 'Silver is undervalued relative to gold with the ratio above 85. Industrial demand from solar panels and EVs provides additional tailwind beyond monetary demand.',
     publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     accuracy: 75
   },
   {
     id: '4',
-    expertName: 'Ahmad Wijaya',
-    expertTitle: 'Senior Analyst, PT Antam',
-    instrument: 'ANTAM',
-    signal: 'Buy',
-    targetPrice: 1450000,
-    stopLoss: 1280000,
-    timeframe: '1M',
-    analysis: 'Harga emas Antam diperkirakan terus menguat seiring pelemahan Rupiah dan tingginya permintaan domestik menjelang musim pernikahan.',
+    expertName: 'Keith Neumeyer',
+    expertTitle: 'CEO, First Majestic Silver',
+    instrument: 'XAG/USD',
+    signal: 'Strong Buy',
+    targetPrice: 40,
+    stopLoss: 28,
+    timeframe: '3M',
+    analysis: 'Silver supply deficit continues to widen. Mine production is declining while industrial and investment demand accelerates. The gold-silver ratio suggests silver could outperform.',
     publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     accuracy: 70
   }
@@ -380,7 +375,7 @@ export const geopoliticalNews: GoldNews[] = [
   }
 ];
 
-// Correlated commodities data (Silver & Copper as leading/lagging indicators)
+// Correlated commodities data
 function generateCorrelatedPrices(base: number, days: number, vol: number): number[] {
   const prices: number[] = [];
   let p = base;

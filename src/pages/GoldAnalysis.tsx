@@ -190,7 +190,7 @@ export default function GoldAnalysis() {
             />
             <CorrelatedAssets />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={livePrices ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG) : undefined} />
               <TechnicalPanel instrument={selectedInstrument} />
             </div>
           </TabsContent>
@@ -198,7 +198,7 @@ export default function GoldAnalysis() {
           {/* Technical Analysis Tab */}
           <TabsContent value="analysis" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={livePrices ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG) : undefined} />
               <TechnicalPanel instrument={selectedInstrument} />
             </div>
           </TabsContent>
@@ -206,7 +206,7 @@ export default function GoldAnalysis() {
           {/* Fundamental Tab */}
           <TabsContent value="fundamental" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={livePrices ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG) : undefined} />
               <FundamentalPanel />
             </div>
             <ExpertAnalysisList instrument={selectedInstrument} />
@@ -236,7 +236,7 @@ export default function GoldAnalysis() {
           <TabsContent value="correlation" className="space-y-4 mt-4">
             <CorrelatedAssets />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={livePrices ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG) : undefined} />
               <FundamentalPanel />
             </div>
           </TabsContent>
