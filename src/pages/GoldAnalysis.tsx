@@ -12,9 +12,11 @@ import { EconomicCalendar } from '@/components/gold/EconomicCalendar';
 import { ExpertAnalysisList } from '@/components/gold/ExpertAnalysisList';
 import { NewsSentiment } from '@/components/gold/NewsSentiment';
 import { CorrelatedAssets } from '@/components/gold/CorrelatedAssets';
+import { TradingSimulator } from '@/components/gold/TradingSimulator';
+import { PriceAlerts } from '@/components/gold/PriceAlerts';
 import { useGoldPrices } from '@/hooks/useGoldPrices';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Bell } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
@@ -36,7 +38,6 @@ export default function GoldAnalysis() {
     fibonacci: false
   });
 
-  // Get current live price for the selected instrument
   const currentLivePrice = livePrices 
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
     : undefined;
@@ -152,10 +153,18 @@ export default function GoldAnalysis() {
         </section>
 
         <Tabs defaultValue="prediction" className="space-y-4">
-          <TabsList className="bg-muted/50">
+          <TabsList className="bg-muted/50 flex-wrap">
             <TabsTrigger value="prediction" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Brain className="h-4 w-4" />
               <span className="hidden sm:inline">AI Prediction</span>
+            </TabsTrigger>
+            <TabsTrigger value="simulator" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <Zap className="h-4 w-4" />
+              <span className="hidden sm:inline">Simulator</span>
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Alerts</span>
             </TabsTrigger>
             <TabsTrigger value="analysis" className="gap-1.5">
               <BarChart3 className="h-4 w-4" />
@@ -189,6 +198,24 @@ export default function GoldAnalysis() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
               <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="simulator" className="space-y-4 mt-4">
+            <TradingSimulator livePrices={livePrices} selectedInstrument={selectedInstrument} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
+              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="alerts" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} />
+              <div className="space-y-4">
+                <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+                <FundamentalPanel />
+              </div>
             </div>
           </TabsContent>
 
@@ -247,7 +274,7 @@ export default function GoldAnalysis() {
 
       <footer className="border-t border-border mt-8 py-4">
         <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-          <p>Data updates periodically. AI predictions are for informational purposes only.</p>
+          <p>Data powered by GoldAPI.io. AI predictions are for informational purposes only.</p>
           <p className="mt-1">Not financial advice. Always do your own research before trading.</p>
         </div>
       </footer>
