@@ -1,7 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { GoldInstrument, GoldPrice } from '@/types/gold';
-import { currentPrices } from '@/data/mockGoldData';
+import type { GoldInstrument } from '@/types/gold';
 import { TrendingUp, TrendingDown, DollarSign, Coins, Loader2 } from 'lucide-react';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
 
@@ -22,36 +21,24 @@ const formatPrice = (price: number): string => {
 };
 
 export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePrices, isLoading }: GoldPriceCardsProps) {
-  // Build prices from live data when available, scaling O/H/L proportionally
-  const prices: Record<GoldInstrument, GoldPrice> = { ...currentPrices };
-  
-  if (livePrices) {
-    // For each instrument, scale all values proportionally to live price
-    const scaleInstrument = (instrument: GoldInstrument, livePrice: number) => {
-      const mock = currentPrices[instrument];
-      const scale = livePrice / mock.price;
-      prices[instrument] = {
-        ...mock,
-        price: livePrice,
-        open: mock.open * scale,
-        high: mock.high * scale,
-        low: mock.low * scale,
-        change: mock.change * scale,
-        timestamp: new Date(livePrices.timestamp * 1000),
-      };
-    };
-    scaleInstrument('XAU/USD', livePrices.XAU);
-    scaleInstrument('XAG/USD', livePrices.XAG);
-  }
+  const instruments: GoldInstrument[] = ['XAU/USD', 'XAG/USD'];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {(Object.keys(prices) as GoldInstrument[]).map((instrument) => {
-        const price = prices[instrument];
+      {instruments.map((instrument) => {
         const info = instrumentLabels[instrument];
         const isSelected = instrument === selectedInstrument;
-        const isPositive = price.change >= 0;
         const isLive = !!livePrices;
+
+        // Use real API data
+        const isXAU = instrument === 'XAU/USD';
+        const price = livePrices ? (isXAU ? livePrices.XAU : livePrices.XAG) : 0;
+        const open = livePrices ? (isXAU ? livePrices.XAU_open : livePrices.XAG_open) : 0;
+        const high = livePrices ? (isXAU ? livePrices.XAU_high : livePrices.XAG_high) : 0;
+        const low = livePrices ? (isXAU ? livePrices.XAU_low : livePrices.XAG_low) : 0;
+        const change = livePrices ? (isXAU ? livePrices.XAU_change : livePrices.XAG_change) : 0;
+        const changePercent = livePrices ? (isXAU ? livePrices.XAU_changePercent : livePrices.XAG_changePercent) : 0;
+        const isPositive = change >= 0;
 
         return (
           <Card 
@@ -93,10 +80,10 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     <span className="text-muted-foreground text-sm">Loading live price...</span>
                   </div>
-                ) : (
+                ) : livePrices ? (
                   <>
                     <p className="text-2xl font-bold font-mono text-foreground">
-                      {formatPrice(price.price)}
+                      {formatPrice(price)}
                     </p>
                     <div className={`flex items-center gap-1 mt-1 ${isPositive ? 'text-gain' : 'text-loss'}`}>
                       {isPositive ? (
@@ -105,27 +92,31 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                         <TrendingDown className="h-4 w-4" />
                       )}
                       <span className="font-mono text-sm">
-                        {isPositive ? '+' : ''}{formatPrice(price.change)} ({isPositive ? '+' : ''}{price.changePercent.toFixed(2)}%)
+                        {isPositive ? '+' : ''}{formatPrice(change)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
                       </span>
                     </div>
                   </>
+                ) : (
+                  <p className="text-muted-foreground text-sm">No data available</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
-                <div>
-                  <p className="text-xs text-muted-foreground">Open</p>
-                  <p className="font-mono text-sm">{formatPrice(price.open)}</p>
+              {livePrices && !isLoading && (
+                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Open</p>
+                    <p className="font-mono text-sm">{formatPrice(open)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">High</p>
+                    <p className="font-mono text-sm text-gain">{formatPrice(high)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Low</p>
+                    <p className="font-mono text-sm text-loss">{formatPrice(low)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">High</p>
-                  <p className="font-mono text-sm text-gain">{formatPrice(price.high)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Low</p>
-                  <p className="font-mono text-sm text-loss">{formatPrice(price.low)}</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         );
