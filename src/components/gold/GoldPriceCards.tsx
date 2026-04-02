@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AnimatedPrice } from './AnimatedPrice';
 import type { GoldInstrument } from '@/types/gold';
 import { TrendingUp, TrendingDown, DollarSign, Coins, Loader2 } from 'lucide-react';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
@@ -16,10 +17,6 @@ const instrumentLabels: Record<GoldInstrument, { name: string; description: stri
   'XAG/USD': { name: 'XAG/USD', description: 'Spot Silver', icon: <Coins className="h-5 w-5" /> },
 };
 
-const formatPrice = (price: number): string => {
-  return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
 export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePrices, isLoading }: GoldPriceCardsProps) {
   const instruments: GoldInstrument[] = ['XAU/USD', 'XAG/USD'];
 
@@ -30,7 +27,6 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
         const isSelected = instrument === selectedInstrument;
         const isLive = !!livePrices;
 
-        // Use real API data
         const isXAU = instrument === 'XAU/USD';
         const price = livePrices ? (isXAU ? livePrices.XAU : livePrices.XAG) : 0;
         const open = livePrices ? (isXAU ? livePrices.XAU_open : livePrices.XAG_open) : 0;
@@ -61,8 +57,8 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                 </div>
                 <div className="flex items-center gap-1.5">
                   {isLive && (
-                    <Badge variant="outline" className="bg-gain/10 text-gain border-gain/30 text-[10px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-gain mr-1 animate-pulse" />
+                    <Badge variant="outline" className="bg-[hsl(var(--gain))]/10 text-[hsl(var(--gain))] border-[hsl(var(--gain))]/30 text-[10px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--gain))] mr-1 animate-pulse" />
                       LIVE
                     </Badge>
                   )}
@@ -82,17 +78,19 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                   </div>
                 ) : livePrices ? (
                   <>
-                    <p className="text-2xl font-bold font-mono text-foreground">
-                      {formatPrice(price)}
-                    </p>
-                    <div className={`flex items-center gap-1 mt-1 ${isPositive ? 'text-gain' : 'text-loss'}`}>
+                    <AnimatedPrice
+                      value={price}
+                      decimals={2}
+                      className="text-2xl font-bold text-foreground"
+                    />
+                    <div className={`flex items-center gap-1 mt-1 ${isPositive ? 'text-[hsl(var(--gain))]' : 'text-[hsl(var(--loss))]'}`}>
                       {isPositive ? (
                         <TrendingUp className="h-4 w-4" />
                       ) : (
                         <TrendingDown className="h-4 w-4" />
                       )}
                       <span className="font-mono text-sm">
-                        {isPositive ? '+' : ''}{formatPrice(change)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
+                        {isPositive ? '+' : ''}${change.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
                       </span>
                     </div>
                   </>
@@ -105,15 +103,15 @@ export function GoldPriceCards({ selectedInstrument, onSelectInstrument, livePri
                 <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
                   <div>
                     <p className="text-xs text-muted-foreground">Open</p>
-                    <p className="font-mono text-sm">{formatPrice(open)}</p>
+                    <AnimatedPrice value={open} decimals={2} className="text-sm" showFlash={false} />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">High</p>
-                    <p className="font-mono text-sm text-gain">{formatPrice(high)}</p>
+                    <AnimatedPrice value={high} decimals={2} className="text-sm text-[hsl(var(--gain))]" showFlash={false} />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Low</p>
-                    <p className="font-mono text-sm text-loss">{formatPrice(low)}</p>
+                    <AnimatedPrice value={low} decimals={2} className="text-sm text-[hsl(var(--loss))]" showFlash={false} />
                   </div>
                 </div>
               )}
