@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -14,9 +14,11 @@ import { NewsSentiment } from '@/components/gold/NewsSentiment';
 import { CorrelatedAssets } from '@/components/gold/CorrelatedAssets';
 import { TradingSimulator } from '@/components/gold/TradingSimulator';
 import { PriceAlerts } from '@/components/gold/PriceAlerts';
+import { TelegramSettings } from '@/components/gold/TelegramSettings';
+import { AnimatedPrice } from '@/components/gold/AnimatedPrice';
 import { useGoldPrices } from '@/hooks/useGoldPrices';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Bell } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Bell, Send } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
@@ -29,6 +31,7 @@ export default function GoldAnalysis() {
   const [selectedInstrument, setSelectedInstrument] = useState<GoldInstrument>('XAU/USD');
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('1W');
   const { prices: livePrices, isLoading: pricesLoading, refetch: refetchPrices } = useGoldPrices();
+  const [telegramChatId, setTelegramChatId] = useState(() => localStorage.getItem('telegram_chat_id') || '');
   const [showIndicators, setShowIndicators] = useState({
     sma20: true,
     sma50: true,
@@ -58,9 +61,10 @@ export default function GoldAnalysis() {
 
               {livePrices && (
                 <div className="hidden md:flex items-center gap-3 text-xs font-mono">
-                  <span className="text-muted-foreground">XAU: <span className="text-foreground font-semibold">${livePrices.XAU.toFixed(2)}</span></span>
-                  <span className="text-muted-foreground">XAG: <span className="text-foreground">${livePrices.XAG.toFixed(2)}</span></span>
+                  <span className="text-muted-foreground">XAU: <AnimatedPrice value={livePrices.XAU} decimals={2} className="text-foreground font-semibold text-xs" /></span>
+                  <span className="text-muted-foreground">XAG: <AnimatedPrice value={livePrices.XAG} decimals={2} className="text-foreground text-xs" /></span>
                   <span className="text-muted-foreground">Au/Ag: <span className="text-foreground">{livePrices.goldSilverRatio.toFixed(1)}</span></span>
+                  {telegramChatId && <span className="text-accent text-[10px]">📱</span>}
                   <button onClick={refetchPrices} className="p-1 hover:bg-secondary rounded transition-colors">
                     <RefreshCw className={`h-3 w-3 text-muted-foreground ${pricesLoading ? 'animate-spin' : ''}`} />
                   </button>
@@ -96,30 +100,19 @@ export default function GoldAnalysis() {
             </span>
             
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <Switch id="sma20" checked={showIndicators.sma20}
-                  onCheckedChange={(c) => setShowIndicators(p => ({ ...p, sma20: c }))}
-                  className="h-4 w-7" />
-                <Label htmlFor="sma20" className="text-xs cursor-pointer text-gain">SMA20</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Switch id="sma50" checked={showIndicators.sma50}
-                  onCheckedChange={(c) => setShowIndicators(p => ({ ...p, sma50: c }))}
-                  className="h-4 w-7" />
-                <Label htmlFor="sma50" className="text-xs cursor-pointer text-loss">SMA50</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Switch id="ema12" checked={showIndicators.ema12}
-                  onCheckedChange={(c) => setShowIndicators(p => ({ ...p, ema12: c }))}
-                  className="h-4 w-7" />
-                <Label htmlFor="ema12" className="text-xs cursor-pointer" style={{ color: 'hsl(var(--accent))' }}>EMA12</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Switch id="ema26" checked={showIndicators.ema26}
-                  onCheckedChange={(c) => setShowIndicators(p => ({ ...p, ema26: c }))}
-                  className="h-4 w-7" />
-                <Label htmlFor="ema26" className="text-xs cursor-pointer text-warning">EMA26</Label>
-              </div>
+              {[
+                { id: 'sma20', label: 'SMA20', color: 'text-[hsl(var(--gain))]' },
+                { id: 'sma50', label: 'SMA50', color: 'text-[hsl(var(--loss))]' },
+                { id: 'ema12', label: 'EMA12', color: 'text-accent' },
+                { id: 'ema26', label: 'EMA26', color: 'text-[hsl(var(--warning))]' },
+              ].map(ind => (
+                <div key={ind.id} className="flex items-center gap-1.5">
+                  <Switch id={ind.id} checked={showIndicators[ind.id as keyof typeof showIndicators]}
+                    onCheckedChange={(c) => setShowIndicators(p => ({ ...p, [ind.id]: c }))}
+                    className="h-4 w-7" />
+                  <Label htmlFor={ind.id} className={`text-xs cursor-pointer ${ind.color}`}>{ind.label}</Label>
+                </div>
+              ))}
             </div>
 
             <div className="h-4 w-px bg-border" />
@@ -135,7 +128,7 @@ export default function GoldAnalysis() {
                 <Switch id="fibonacci" checked={showIndicators.fibonacci}
                   onCheckedChange={(c) => setShowIndicators(p => ({ ...p, fibonacci: c }))}
                   className="h-4 w-7" />
-                <Label htmlFor="fibonacci" className="text-xs cursor-pointer text-warning">Fibonacci</Label>
+                <Label htmlFor="fibonacci" className="text-xs cursor-pointer text-[hsl(var(--warning))]">Fibonacci</Label>
               </div>
             </div>
           </div>
@@ -165,6 +158,10 @@ export default function GoldAnalysis() {
             <TabsTrigger value="alerts" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Alerts</span>
+            </TabsTrigger>
+            <TabsTrigger value="telegram" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <Send className="h-4 w-4" />
+              <span className="hidden sm:inline">Telegram</span>
             </TabsTrigger>
             <TabsTrigger value="analysis" className="gap-1.5">
               <BarChart3 className="h-4 w-4" />
@@ -202,7 +199,7 @@ export default function GoldAnalysis() {
           </TabsContent>
 
           <TabsContent value="simulator" className="space-y-4 mt-4">
-            <TradingSimulator livePrices={livePrices} selectedInstrument={selectedInstrument} />
+            <TradingSimulator livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
               <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
@@ -211,10 +208,19 @@ export default function GoldAnalysis() {
 
           <TabsContent value="alerts" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} />
+              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
               <div className="space-y-4">
                 <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
                 <FundamentalPanel />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="telegram" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TelegramSettings chatId={telegramChatId} onChatIdChange={setTelegramChatId} />
+              <div className="space-y-4">
+                <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
               </div>
             </div>
           </TabsContent>
