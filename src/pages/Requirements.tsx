@@ -117,10 +117,10 @@ const Requirements = () => {
           </ul>
           <p className="font-semibold mb-1">The system does NOT include:</p>
           <ul className="list-disc pl-6 space-y-1 mb-3">
-            <li>Direct trading or order execution functionality</li>
+            <li>Direct real-money trading or order execution functionality (simulator uses paper money only)</li>
             <li>Licensed financial advisory services</li>
             <li>Guaranteed return predictions or profit promises</li>
-            <li>Automated investment execution or portfolio management</li>
+            <li>Automated real-money investment execution or portfolio management</li>
           </ul>
           <p className="italic text-sm text-gray-600">This project is intended for analytical and educational purposes only.</p>
 
