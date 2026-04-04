@@ -672,7 +672,10 @@ const Requirements = () => {
                 ["Routing", "React Router", "6.x", "Client-side SPA navigation"],
                 ["Backend", "Lovable Cloud (Deno Edge Functions)", "Latest", "Serverless API endpoints and AI gateway"],
                 ["AI Model", "Google Gemini 2.5 Flash", "Latest", "Natural language prediction and news generation"],
-                ["Price API", "MetalpriceAPI", "v1", "Live precious metal spot prices"],
+                ["Price API", "GoldAPI.io", "v1", "Live precious metal spot prices (XAU/USD, XAG/USD) with OHLC data"],
+                ["Notifications", "Telegram Bot API", "Latest", "Push notifications via @goldaiprediction_bot connector gateway"],
+                ["News API", "NewsAPI.org", "v2", "Real-time news headlines for AI context enrichment"],
+                ["Cron Jobs", "pg_cron + pg_net", "Latest", "Server-side scheduled alert checking every minute"],
               ].map(([layer, tech, ver, purpose], i) => (
                 <tr key={i}>
                   <td className="border border-gray-400 px-3 py-2 font-medium">{layer}</td>
