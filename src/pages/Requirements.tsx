@@ -25,11 +25,11 @@ const Requirements = () => {
           <p className="text-sm tracking-[0.3em] uppercase text-gray-500 mb-4">Software Requirements Specification</p>
           <h1 className="text-4xl font-bold mb-2 tracking-tight">GO-IDX Analyze</h1>
           <p className="text-lg text-gray-600 mb-2">Gold Investment Decision Support System</p>
-          <p className="text-sm text-gray-500 mb-8">Multi-Criteria Evaluation & Market Intelligence Platform</p>
-          <div className="w-24 h-0.5 bg-black mx-auto mb-8" />
-          <div className="text-sm text-gray-500 space-y-1">
-            <p>Version 2.0</p>
-            <p>March 2026</p>
+            <p className="text-sm text-gray-500 mb-8">Multi-Criteria Evaluation & Market Intelligence Platform</p>
+            <div className="w-24 h-0.5 bg-black mx-auto mb-8" />
+            <div className="text-sm text-gray-500 space-y-1">
+              <p>Version 3.0</p>
+              <p>April 2026</p>
             <p className="mt-4">Prepared for Software Engineering Course</p>
             <p>Academic Presentation & Documentation</p>
           </div>
