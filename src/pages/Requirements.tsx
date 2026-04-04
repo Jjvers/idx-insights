@@ -925,7 +925,7 @@ const Requirements = () => {
               and AI-generated predictions do not guarantee future results.
             </p>
             <p className="mt-6 font-semibold text-black">— End of Document —</p>
-            <p className="mt-2 text-xs text-gray-400">GO-IDX Analyze v2.0 | Software Requirements Specification | March 2026</p>
+            <p className="mt-2 text-xs text-gray-400">GO-IDX Analyze v3.0 | Software Requirements Specification | April 2026</p>
           </div>
         </section>
       </article>
