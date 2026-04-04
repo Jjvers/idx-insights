@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const NEWSAPI_URL = "https://newsapi.org/v2/everything";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,6 +20,26 @@ serve(async (req) => {
 
     const { goldPrice, silverPrice } = await req.json();
 
+    // Try fetching real news from NewsAPI first
+    let realNewsContext = "";
+    const NEWSAPI_KEY = Deno.env.get("NEWSAPI_KEY");
+    if (NEWSAPI_KEY) {
+      try {
+        const newsRes = await fetch(
+          `${NEWSAPI_URL}?q=gold+price+market&language=en&sortBy=publishedAt&pageSize=5&apiKey=${NEWSAPI_KEY}`
+        );
+        if (newsRes.ok) {
+          const newsData = await newsRes.json();
+          if (newsData.articles && newsData.articles.length > 0) {
+            realNewsContext = "\n\nRecent real headlines for context:\n" +
+              newsData.articles.map((a: any) => `- ${a.title} (${a.source?.name})`).join("\n");
+          }
+        }
+      } catch (e) {
+        console.log("NewsAPI fetch failed, continuing with AI-only:", e);
+      }
+    }
+
     const systemPrompt = `You are a gold market news analyst. Generate 8 realistic, current gold & precious metals market news items based on the current XAU/USD price of $${goldPrice || 'unknown'} and XAG/USD at $${silverPrice || 'unknown'}.
 
 Each news item must reflect real market dynamics and be plausible for today's date. Include a mix of:
@@ -26,6 +48,7 @@ Each news item must reflect real market dynamics and be plausible for today's da
 - Supply/demand dynamics
 - Market sentiment shifts
 - Central bank activity
+${realNewsContext}
 
 Return ONLY valid JSON array, no markdown, no explanation.`;
 

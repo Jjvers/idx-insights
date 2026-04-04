@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ interface GoldChartProps {
 }
 
 type ChartType = 'area' | 'candle' | 'line';
-type ChartPeriod = '1M' | '3M' | '6M' | '1Y';
+type ChartPeriod = '1D' | '3D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
 const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toFixed(2)}`;
@@ -84,16 +84,87 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
   
-  const ohlcData = getOHLCData(instrument, livePrice);
+  // Real-time tick simulation: price updates per second
+  const [tickPrice, setTickPrice] = useState<number | null>(null);
+  const tickRef = useRef<number>();
+
+  useEffect(() => {
+    if (!livePrice) return;
+    setTickPrice(livePrice);
+    
+    // Simulate per-second micro ticks around the live price
+    const vol = instrument === 'XAU/USD' ? 0.0001 : 0.0003;
+    tickRef.current = window.setInterval(() => {
+      setTickPrice(prev => {
+        const base = prev || livePrice;
+        const change = (Math.random() - 0.5) * vol * base;
+        return base + change;
+      });
+    }, 1000);
+
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, [livePrice, instrument]);
+
+  const effectivePrice = tickPrice || livePrice;
+  
+  const ohlcData = getOHLCData(instrument, effectivePrice);
   const indicators = useMemo(() => calculateAllIndicators(ohlcData), [ohlcData]);
   const currentPrice = ohlcData[ohlcData.length - 1].close;
   const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
 
-  const periodDays = {
+  const periodDays: Record<ChartPeriod, number> = {
+    '1D': 1,
+    '3D': 3,
+    '1W': 7,
     '1M': 30,
     '3M': 90,
     '6M': 180,
     '1Y': 365
+  };
+
+  // For 1D and 3D, we generate intraday data from the OHLC
+  const generateIntradayData = (days: number) => {
+    const slice = ohlcData.slice(-Math.max(days, 1));
+    const intradayPoints: any[] = [];
+    
+    slice.forEach((candle, idx) => {
+      // Generate ~24 points per day for granularity
+      const pointsPerDay = days <= 1 ? 48 : days <= 3 ? 24 : 12;
+      for (let i = 0; i < pointsPerDay; i++) {
+        const t = i / pointsPerDay;
+        // Interpolate between open and close with some noise touching high/low
+        const mid = candle.open + (candle.close - candle.open) * t;
+        const range = candle.high - candle.low;
+        const noise = (Math.sin(t * Math.PI * 4 + idx) * 0.3 + (Math.random() - 0.5) * 0.2) * range;
+        const price = Math.max(candle.low, Math.min(candle.high, mid + noise));
+        
+        const hour = Math.floor(t * 24);
+        const minute = Math.floor((t * 24 - hour) * 60);
+        
+        intradayPoints.push({
+          date: `${format(candle.date, 'MMM dd')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+          fullDate: `${format(candle.date, 'MMM dd, yyyy')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+          price,
+          high: candle.high,
+          low: candle.low,
+          open: candle.open,
+          close: candle.close,
+          volume: Math.floor(candle.volume / pointsPerDay),
+          sma20: null,
+          sma50: null,
+          ema12: null,
+          ema26: null,
+          upperBand: null,
+          lowerBand: null,
+          rsi: null,
+          macdLine: null,
+          macdSignal: null,
+          macdHist: null,
+          isUp: price >= candle.open
+        });
+      }
+    });
+    return intradayPoints;
   };
 
   // Fibonacci levels
@@ -117,6 +188,11 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
 
   // Prepare chart data with EMA
   const chartData = useMemo(() => {
+    // For short periods, use intraday simulation
+    if (period === '1D' || period === '3D') {
+      return generateIntradayData(periodDays[period]);
+    }
+
     const closes = ohlcData.map(d => d.close);
     const days = Math.min(periodDays[period], ohlcData.length);
     
@@ -289,8 +365,8 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
 
         {/* Chart Controls */}
         <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
-          <div className="flex items-center gap-1">
-            {(['1M', '3M', '6M', '1Y'] as ChartPeriod[]).map((p) => (
+          <div className="flex items-center gap-1 flex-wrap">
+            {(['1D', '3D', '1W', '1M', '3M', '6M', '1Y'] as ChartPeriod[]).map((p) => (
               <Button
                 key={p}
                 variant={period === p ? 'default' : 'ghost'}
@@ -331,13 +407,12 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
           </div>
         </div>
 
-        {/* Indicator Toggles - TradingView style toolbar */}
+        {/* Indicator Toggles */}
         <div className="flex items-center gap-3 mt-2 flex-wrap text-xs">
           <span className="text-muted-foreground flex items-center gap-1">
             <Settings2 className="h-3.5 w-3.5" />
             Indicators:
           </span>
-          {/* MA Overlays */}
           <div className="flex items-center gap-3 border-r border-border pr-3">
             {showIndicators.sma20 !== undefined && (
               <Badge variant="outline" className="text-[10px] bg-gain/10 text-gain border-gain/30 cursor-default">
@@ -370,7 +445,6 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
               </Badge>
             )}
           </div>
-          {/* Sub-chart toggles */}
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowRSI(!showRSI)}
@@ -389,6 +463,14 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
               MACD
             </button>
           </div>
+
+          {/* Real-time tick indicator */}
+          {tickPrice && (
+            <div className="ml-auto flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--gain))] animate-pulse" />
+              <span className="text-[10px] text-muted-foreground">Live tick</span>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>

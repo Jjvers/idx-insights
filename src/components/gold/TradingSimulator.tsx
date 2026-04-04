@@ -45,11 +45,10 @@ interface TradingSimulatorProps {
   telegramChatId?: string;
 }
 
-const INITIAL_BALANCES = [1000, 5000, 10000, 50000, 100000];
-
 export function TradingSimulator({ livePrices, selectedInstrument, telegramChatId }: TradingSimulatorProps) {
   const [balance, setBalance] = useState(10000);
   const [initialBalance, setInitialBalance] = useState(10000);
+  const [customBalance, setCustomBalance] = useState('');
   const [trades, setTrades] = useState<SimTrade[]>([]);
   const [units, setUnits] = useState(1);
   const [stopLoss, setStopLoss] = useState('');
@@ -57,8 +56,8 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulatedPrices, setSimulatedPrices] = useState<SimulationPoint[]>([]);
   const [simPrice, setSimPrice] = useState<number | null>(null);
-  const [simSpeed, setSimSpeed] = useState(50); // slider 1-100
-  const [volatility, setVolatility] = useState(50); // slider 1-100
+  const [simSpeed, setSimSpeed] = useState(50);
+  const [volatility, setVolatility] = useState(50);
   const { toast } = useToast();
 
   const currentPrice = simPrice || (livePrices
@@ -85,7 +84,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     ? (closedTrades.filter(t => (t.pnl || 0) > 0).length / closedTrades.length) * 100
     : 0;
 
-  // Notify via Telegram
   const notifyTelegram = useCallback(async (message: string) => {
     if (!telegramChatId) return;
     try {
@@ -136,7 +134,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     }));
   }, [currentPrice, toast, notifyTelegram]);
 
-  // Price simulation engine with user-controlled speed & volatility
+  // Price simulation engine
   useEffect(() => {
     if (!isSimulating || !currentPrice) return;
 
@@ -147,7 +145,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
       setSimPrice(prev => {
         const base = prev || currentPrice;
         const change = (Math.random() - 0.48) * vol * base;
-        const newPrice = Math.max(base * 0.95, base + change); // floor at -5%
+        const newPrice = Math.max(base * 0.95, base + change);
 
         setSimulatedPrices(p => [
           ...p.slice(-150),
@@ -166,23 +164,22 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     const sl = parseFloat(stopLoss) || undefined;
     const tp = parseFloat(takeProfit) || undefined;
 
-    // Validation
     if (type === 'BUY') {
       if (sl && sl >= currentPrice) {
-        toast({ title: '⚠️ Stop Loss harus di bawah harga saat ini untuk BUY', variant: 'destructive' });
+        toast({ title: '⚠️ Stop Loss harus di bawah harga untuk BUY', variant: 'destructive' });
         return;
       }
       if (tp && tp <= currentPrice) {
-        toast({ title: '⚠️ Take Profit harus di atas harga saat ini untuk BUY', variant: 'destructive' });
+        toast({ title: '⚠️ Take Profit harus di atas harga untuk BUY', variant: 'destructive' });
         return;
       }
     } else {
       if (sl && sl <= currentPrice) {
-        toast({ title: '⚠️ Stop Loss harus di atas harga saat ini untuk SELL', variant: 'destructive' });
+        toast({ title: '⚠️ Stop Loss harus di atas harga untuk SELL', variant: 'destructive' });
         return;
       }
       if (tp && tp >= currentPrice) {
-        toast({ title: '⚠️ Take Profit harus di bawah harga saat ini untuk SELL', variant: 'destructive' });
+        toast({ title: '⚠️ Take Profit harus di bawah harga untuk SELL', variant: 'destructive' });
         return;
       }
     }
@@ -239,7 +236,21 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     setIsSimulating(false);
   };
 
-  // Quick SL/TP buttons
+  const setCustomBalanceValue = () => {
+    const val = parseFloat(customBalance);
+    if (!val || val <= 0) {
+      toast({ title: 'Masukkan jumlah yang valid', variant: 'destructive' });
+      return;
+    }
+    setInitialBalance(val);
+    setBalance(val);
+    setTrades([]);
+    setSimulatedPrices([]);
+    setSimPrice(null);
+    setCustomBalance('');
+    toast({ title: `💰 Balance diatur ke $${val.toLocaleString()}` });
+  };
+
   const quickSL = (pct: number) => {
     if (!currentPrice) return;
     const sl = currentPrice * (1 - pct / 100);
@@ -261,16 +272,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
               Trading Simulator
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Select value={String(initialBalance)} onValueChange={v => { setInitialBalance(Number(v)); setBalance(Number(v)); setTrades([]); }}>
-                <SelectTrigger className="w-28 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INITIAL_BALANCES.map(b => (
-                    <SelectItem key={b} value={String(b)}>${b.toLocaleString()}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Button
                 size="sm"
                 variant={isSimulating ? 'destructive' : 'default'}
@@ -290,6 +291,36 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Balance Settings */}
+          <div className="p-3 rounded-lg border border-border bg-muted/20">
+            <Label className="text-xs text-muted-foreground mb-2 block">💰 Initial Balance</Label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[1000, 5000, 10000, 50000, 100000].map(b => (
+                <Button
+                  key={b}
+                  size="sm"
+                  variant={initialBalance === b ? 'default' : 'outline'}
+                  className="h-7 text-xs"
+                  onClick={() => { setInitialBalance(b); setBalance(b); setTrades([]); setSimulatedPrices([]); setSimPrice(null); }}
+                >
+                  ${b.toLocaleString()}
+                </Button>
+              ))}
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  value={customBalance}
+                  onChange={e => setCustomBalance(e.target.value)}
+                  placeholder="Custom..."
+                  className="h-7 w-28 text-xs font-mono"
+                />
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={setCustomBalanceValue}>
+                  Set
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Simulation Controls */}
           <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/20 border border-border">
             <div>
@@ -360,13 +391,11 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
           {/* Trade Controls */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/10">
-              {/* Current Price Display */}
               <div className="text-center p-2 rounded-lg bg-card border border-border">
                 <p className="text-xs text-muted-foreground">Harga Saat Ini</p>
                 <AnimatedPrice value={currentPrice} decimals={2} className="text-2xl font-bold text-foreground" />
               </div>
 
-              {/* Units with +/- */}
               <div>
                 <Label className="text-xs">Units</Label>
                 <div className="flex items-center gap-1 mt-1">
@@ -380,7 +409,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                 </div>
               </div>
 
-              {/* Stop Loss */}
               <div>
                 <Label className="text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Stop Loss</Label>
                 <Input type="number" value={stopLoss} onChange={e => setStopLoss(e.target.value)} placeholder="Optional" className="h-8 font-mono mt-1" />
@@ -391,7 +419,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                 </div>
               </div>
 
-              {/* Take Profit */}
               <div>
                 <Label className="text-xs flex items-center gap-1"><Target className="h-3 w-3" /> Take Profit</Label>
                 <Input type="number" value={takeProfit} onChange={e => setTakeProfit(e.target.value)} placeholder="Optional" className="h-8 font-mono mt-1" />
@@ -402,7 +429,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                 </div>
               </div>
 
-              {/* Buy/Sell Buttons */}
               <div className="flex gap-2">
                 <Button onClick={() => executeTrade('BUY')} className="flex-1 bg-[hsl(var(--gain))] hover:bg-[hsl(var(--gain))]/80 text-white gap-1 h-10">
                   <ArrowUpRight className="h-4 w-4" /> BUY
