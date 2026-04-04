@@ -102,14 +102,18 @@ const Requirements = () => {
           <p className="mb-2">This system focuses on providing structured decision support for gold investment evaluation. The scope is defined as follows:</p>
           <p className="font-semibold mb-1">The system includes:</p>
           <ul className="list-disc pl-6 space-y-1 mb-3">
-            <li>Real-time gold (XAU/USD) and silver (XAG/USD) price monitoring via external APIs</li>
+            <li>Real-time gold (XAU/USD) and silver (XAG/USD) price monitoring via GoldAPI.io with per-second tick animation</li>
             <li>Multi-criteria evaluation with user-defined weighting of criteria (stability, return potential, liquidity, volatility)</li>
             <li>Normalization of criteria values for fair cross-comparison</li>
             <li>Weighted scoring and automated ranking mechanism</li>
             <li>Technical analysis indicators (EMA, RSI, MACD, Fibonacci, Bollinger Bands)</li>
             <li>AI-powered prediction with scenario analysis and confidence scoring</li>
-            <li>News sentiment analysis categorized by geopolitical, macroeconomic, and market factors</li>
+            <li>News sentiment analysis with NewsAPI integration, categorized by geopolitical, macroeconomic, and market factors</li>
             <li>Risk labeling, recommendation output, and interactive dashboard visualization</li>
+            <li>Paper trading simulator with customizable balance, speed, volatility controls, and SL/TP automation</li>
+            <li>Telegram bot integration (@goldaiprediction_bot) for real-time alerts and notifications</li>
+            <li>Server-side cron job for automated price alert checking without requiring web browser to be open</li>
+            <li>Price alerts system with quick-set percentage buttons and Telegram push notifications</li>
           </ul>
           <p className="font-semibold mb-1">The system does NOT include:</p>
           <ul className="list-disc pl-6 space-y-1 mb-3">
