@@ -25,11 +25,11 @@ const Requirements = () => {
           <p className="text-sm tracking-[0.3em] uppercase text-gray-500 mb-4">Software Requirements Specification</p>
           <h1 className="text-4xl font-bold mb-2 tracking-tight">GO-IDX Analyze</h1>
           <p className="text-lg text-gray-600 mb-2">Gold Investment Decision Support System</p>
-          <p className="text-sm text-gray-500 mb-8">Multi-Criteria Evaluation & Market Intelligence Platform</p>
-          <div className="w-24 h-0.5 bg-black mx-auto mb-8" />
-          <div className="text-sm text-gray-500 space-y-1">
-            <p>Version 2.0</p>
-            <p>March 2026</p>
+            <p className="text-sm text-gray-500 mb-8">Multi-Criteria Evaluation & Market Intelligence Platform</p>
+            <div className="w-24 h-0.5 bg-black mx-auto mb-8" />
+            <div className="text-sm text-gray-500 space-y-1">
+              <p>Version 3.0</p>
+              <p>April 2026</p>
             <p className="mt-4">Prepared for Software Engineering Course</p>
             <p>Academic Presentation & Documentation</p>
           </div>
@@ -102,21 +102,25 @@ const Requirements = () => {
           <p className="mb-2">This system focuses on providing structured decision support for gold investment evaluation. The scope is defined as follows:</p>
           <p className="font-semibold mb-1">The system includes:</p>
           <ul className="list-disc pl-6 space-y-1 mb-3">
-            <li>Real-time gold (XAU/USD) and silver (XAG/USD) price monitoring via external APIs</li>
+            <li>Real-time gold (XAU/USD) and silver (XAG/USD) price monitoring via GoldAPI.io with per-second tick animation</li>
             <li>Multi-criteria evaluation with user-defined weighting of criteria (stability, return potential, liquidity, volatility)</li>
             <li>Normalization of criteria values for fair cross-comparison</li>
             <li>Weighted scoring and automated ranking mechanism</li>
             <li>Technical analysis indicators (EMA, RSI, MACD, Fibonacci, Bollinger Bands)</li>
             <li>AI-powered prediction with scenario analysis and confidence scoring</li>
-            <li>News sentiment analysis categorized by geopolitical, macroeconomic, and market factors</li>
+            <li>News sentiment analysis with NewsAPI integration, categorized by geopolitical, macroeconomic, and market factors</li>
             <li>Risk labeling, recommendation output, and interactive dashboard visualization</li>
+            <li>Paper trading simulator with customizable balance, speed, volatility controls, and SL/TP automation</li>
+            <li>Telegram bot integration (@goldaiprediction_bot) for real-time alerts and notifications</li>
+            <li>Server-side cron job for automated price alert checking without requiring web browser to be open</li>
+            <li>Price alerts system with quick-set percentage buttons and Telegram push notifications</li>
           </ul>
           <p className="font-semibold mb-1">The system does NOT include:</p>
           <ul className="list-disc pl-6 space-y-1 mb-3">
-            <li>Direct trading or order execution functionality</li>
+            <li>Direct real-money trading or order execution functionality (simulator uses paper money only)</li>
             <li>Licensed financial advisory services</li>
             <li>Guaranteed return predictions or profit promises</li>
-            <li>Automated investment execution or portfolio management</li>
+            <li>Automated real-money investment execution or portfolio management</li>
           </ul>
           <p className="italic text-sm text-gray-600">This project is intended for analytical and educational purposes only.</p>
 
@@ -275,7 +279,7 @@ const Requirements = () => {
 
           <h3 className="text-lg font-semibold mt-6 mb-2">3.1 System Description</h3>
           <p className="mb-3">
-            GO-IDX Analyze is a web-based Gold Investment Decision Support System designed to help users evaluate and rank gold investment opportunities using a structured, multi-criteria approach. The system pulls real-time price data for gold (XAU/USD) and silver (XAG/USD) from the MetalpriceAPI, calculates a comprehensive set of technical indicators, runs AI-powered predictions, and presents everything through an interactive dashboard.
+            GO-IDX Analyze is a web-based Gold Investment Decision Support System designed to help users evaluate and rank gold investment opportunities using a structured, multi-criteria approach. The system pulls real-time price data for gold (XAU/USD) and silver (XAG/USD) from GoldAPI.io, calculates a comprehensive set of technical indicators, runs AI-powered predictions, and presents everything through an interactive dashboard. It also features a paper trading simulator, Telegram bot notifications (@goldaiprediction_bot), server-side cron alert monitoring, and NewsAPI integration for real-time market context.
           </p>
           <p className="mb-3">
             Rather than simply predicting whether gold prices will go up or down, the system focuses on objective comparison and transparent evaluation. Users can see exactly how each technical indicator contributes to the overall assessment, what the AI model considers when generating its prediction, and how different scenarios (bullish vs. bearish) stack up against each other.
@@ -668,7 +672,10 @@ const Requirements = () => {
                 ["Routing", "React Router", "6.x", "Client-side SPA navigation"],
                 ["Backend", "Lovable Cloud (Deno Edge Functions)", "Latest", "Serverless API endpoints and AI gateway"],
                 ["AI Model", "Google Gemini 2.5 Flash", "Latest", "Natural language prediction and news generation"],
-                ["Price API", "MetalpriceAPI", "v1", "Live precious metal spot prices"],
+                ["Price API", "GoldAPI.io", "v1", "Live precious metal spot prices (XAU/USD, XAG/USD) with OHLC data"],
+                ["Notifications", "Telegram Bot API", "Latest", "Push notifications via @goldaiprediction_bot connector gateway"],
+                ["News API", "NewsAPI.org", "v2", "Real-time news headlines for AI context enrichment"],
+                ["Cron Jobs", "pg_cron + pg_net", "Latest", "Server-side scheduled alert checking every minute"],
               ].map(([layer, tech, ver, purpose], i) => (
                 <tr key={i}>
                   <td className="border border-gray-400 px-3 py-2 font-medium">{layer}</td>
@@ -925,7 +932,7 @@ const Requirements = () => {
               and AI-generated predictions do not guarantee future results.
             </p>
             <p className="mt-6 font-semibold text-black">— End of Document —</p>
-            <p className="mt-2 text-xs text-gray-400">GO-IDX Analyze v2.0 | Software Requirements Specification | March 2026</p>
+            <p className="mt-2 text-xs text-gray-400">GO-IDX Analyze v3.0 | Software Requirements Specification | April 2026</p>
           </div>
         </section>
       </article>
