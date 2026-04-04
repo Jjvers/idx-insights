@@ -279,7 +279,7 @@ const Requirements = () => {
 
           <h3 className="text-lg font-semibold mt-6 mb-2">3.1 System Description</h3>
           <p className="mb-3">
-            GO-IDX Analyze is a web-based Gold Investment Decision Support System designed to help users evaluate and rank gold investment opportunities using a structured, multi-criteria approach. The system pulls real-time price data for gold (XAU/USD) and silver (XAG/USD) from the MetalpriceAPI, calculates a comprehensive set of technical indicators, runs AI-powered predictions, and presents everything through an interactive dashboard.
+            GO-IDX Analyze is a web-based Gold Investment Decision Support System designed to help users evaluate and rank gold investment opportunities using a structured, multi-criteria approach. The system pulls real-time price data for gold (XAU/USD) and silver (XAG/USD) from GoldAPI.io, calculates a comprehensive set of technical indicators, runs AI-powered predictions, and presents everything through an interactive dashboard. It also features a paper trading simulator, Telegram bot notifications (@goldaiprediction_bot), server-side cron alert monitoring, and NewsAPI integration for real-time market context.
           </p>
           <p className="mb-3">
             Rather than simply predicting whether gold prices will go up or down, the system focuses on objective comparison and transparent evaluation. Users can see exactly how each technical indicator contributes to the overall assessment, what the AI model considers when generating its prediction, and how different scenarios (bullish vs. bearish) stack up against each other.
