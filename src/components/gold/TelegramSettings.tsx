@@ -5,12 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  TELEGRAM_BOT_USERNAME,
+  getTelegramSetupHint,
+  isValidTelegramChatId,
+  normalizeTelegramChatId,
+  sendTelegramNotification,
+} from '@/lib/api/telegram';
 import {
   Send, Bot, CheckCircle2, Copy, ExternalLink, MessageSquare, Settings, Info, AlertCircle, Users
 } from 'lucide-react';
-
-const BOT_USERNAME = 'goldaiprediction_bot';
 
 interface TelegramSettingsProps {
   chatId: string;
@@ -29,36 +33,62 @@ export function TelegramSettings({ chatId, onChatIdChange }: TelegramSettingsPro
   }, [chatId]);
 
   const saveChatId = () => {
-    if (!inputChatId.trim()) {
+    const normalizedChatId = normalizeTelegramChatId(inputChatId);
+
+    if (!normalizedChatId) {
       toast({ title: '❌ Chat ID kosong', description: 'Masukkan Chat ID atau Group ID Telegram', variant: 'destructive' });
       return;
     }
-    onChatIdChange(inputChatId.trim());
+
+    if (!isValidTelegramChatId(normalizedChatId)) {
+      toast({
+        title: '❌ Format Chat ID tidak valid',
+        description: 'Gunakan angka dari @userinfobot, misalnya 123456789 atau -100123456789',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    onChatIdChange(normalizedChatId);
+    setInputChatId(normalizedChatId);
     setIsConnected(true);
-    localStorage.setItem('telegram_chat_id', inputChatId.trim());
-    toast({ title: '✅ Telegram Terhubung!', description: `Chat ID: ${inputChatId.trim()} tersimpan` });
+    localStorage.setItem('telegram_chat_id', normalizedChatId);
+    toast({ title: '💾 Chat ID tersimpan', description: `ID ${normalizedChatId} tersimpan. Lanjut klik "Kirim Pesan Test".` });
   };
 
   const testConnection = async () => {
-    if (!inputChatId.trim()) {
+    const normalizedChatId = normalizeTelegramChatId(inputChatId);
+
+    if (!normalizedChatId) {
       toast({ title: '❌ Masukkan Chat ID dulu', variant: 'destructive' });
       return;
     }
+
+    if (!isValidTelegramChatId(normalizedChatId)) {
+      toast({
+        title: '❌ Format Chat ID tidak valid',
+        description: 'Gunakan angka dari @userinfobot, bukan username atau link Telegram.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('price-alerts', {
-        body: {
-          action: 'notify',
-          alert: {
-            telegramChatId: inputChatId.trim(),
-            message: '🤖 <b>Gold AI Prediction Bot Connected!</b>\n\n✅ Koneksi Telegram berhasil!\n\nKamu akan menerima notifikasi:\n📊 Pergerakan harga emas & perak real-time\n🎯 Take Profit & Stop Loss tercapai\n📈 Sinyal trading & alert harga\n🔔 Price alerts otomatis dari server\n⚡ Order eksekusi simulator\n\n<i>Powered by GO-IDX Analyze Platform</i>',
-          }
-        }
-      });
-      if (error) throw error;
+      await sendTelegramNotification(
+        normalizedChatId,
+        '🤖 <b>Gold AI Prediction Bot Connected!</b>\n\n✅ Koneksi Telegram berhasil!\n\nKamu akan menerima notifikasi:\n📊 Pergerakan harga emas & perak real-time\n🎯 Take Profit & Stop Loss tercapai\n📈 Sinyal trading & alert harga\n🔔 Price alerts otomatis dari server\n⚡ Order eksekusi simulator\n\n<i>Powered by GO-IDX Analyze Platform</i>'
+      );
+      onChatIdChange(normalizedChatId);
+      setInputChatId(normalizedChatId);
+      setIsConnected(true);
+      localStorage.setItem('telegram_chat_id', normalizedChatId);
       toast({ title: '✅ Pesan test terkirim!', description: 'Cek Telegram kamu' });
     } catch (err) {
-      toast({ title: '❌ Gagal mengirim', description: 'Pastikan Chat ID benar dan bot sudah di-start', variant: 'destructive' });
+      const message = err instanceof Error ? err.message : 'Telegram notification failed';
+      setIsConnected(false);
+      console.error('Telegram test error:', message);
+      toast({ title: '❌ Gagal mengirim', description: getTelegramSetupHint(message), variant: 'destructive' });
     } finally {
       setIsTesting(false);
     }
@@ -88,7 +118,7 @@ export function TelegramSettings({ chatId, onChatIdChange }: TelegramSettingsPro
             </span>
             {isConnected && (
               <Badge className="bg-[hsl(var(--gain))]/20 text-[hsl(var(--gain))] border-[hsl(var(--gain))]/30">
-                <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Configured
               </Badge>
             )}
           </CardTitle>
@@ -101,17 +131,17 @@ export function TelegramSettings({ chatId, onChatIdChange }: TelegramSettingsPro
               Step 1: Mulai Bot Telegram
             </h4>
             <p className="text-xs text-muted-foreground mb-3">
-              Klik tombol di bawah untuk membuka bot <code>@{BOT_USERNAME}</code> di Telegram, lalu tekan <b>Start</b>.
+               Klik tombol di bawah untuk membuka bot <code>@{TELEGRAM_BOT_USERNAME}</code> di Telegram, lalu tekan <b>Start</b>.
             </p>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => window.open(`https://t.me/${BOT_USERNAME}`, '_blank')}
+                 onClick={() => window.open(`https://t.me/${TELEGRAM_BOT_USERNAME}`, '_blank')}
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                Buka @{BOT_USERNAME}
+                 Buka @{TELEGRAM_BOT_USERNAME}
               </Button>
               <Button size="sm" variant="ghost" onClick={copyBotLink} className="gap-1">
                 <Copy className="h-3.5 w-3.5" /> Copy Link
@@ -147,7 +177,7 @@ Lang: en`}
               <div className="mt-2 p-2 rounded bg-card border border-border">
                 <p className="font-medium text-foreground mb-1">👥 Untuk grup Telegram:</p>
                 <ol className="list-decimal pl-4 space-y-0.5 text-[11px]">
-                  <li>Tambahkan <code>@{BOT_USERNAME}</code> ke dalam grup</li>
+                  <li>Tambahkan <code>@{TELEGRAM_BOT_USERNAME}</code> ke dalam grup</li>
                   <li>Tambahkan juga <code>@userinfobot</code> ke grup (sementara)</li>
                   <li>Kirim pesan apapun di grup</li>
                   <li>Bot <code>@userinfobot</code> akan membalas dengan Group ID (biasanya mulai dengan <code>-</code>)</li>
@@ -232,7 +262,7 @@ Lang: en`}
             <ul className="text-[11px] text-muted-foreground space-y-1">
               <li>• Server-side cron job berjalan setiap menit untuk cek alert</li>
               <li>• Notifikasi dikirim otomatis tanpa perlu web terbuka</li>
-              <li>• Pastikan bot <code>@{BOT_USERNAME}</code> sudah di-Start</li>
+                <li>• Pastikan bot <code>@{TELEGRAM_BOT_USERNAME}</code> sudah di-Start</li>
               <li>• Untuk grup: pastikan bot sudah ditambahkan sebagai member</li>
             </ul>
           </div>
