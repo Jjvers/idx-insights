@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { GoldInstrument } from '@/types/gold';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { sendTelegramNotification } from '@/lib/api/telegram';
 import {
   Bell, BellRing, Plus, Trash2, TrendingUp, TrendingDown,
   Volume2, CheckCircle2
@@ -44,9 +44,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
   const notifyTelegram = async (message: string) => {
     if (!telegramChatId) return;
     try {
-      await supabase.functions.invoke('price-alerts', {
-        body: { action: 'notify', alert: { telegramChatId, message } }
-      });
+      await sendTelegramNotification(telegramChatId, message);
     } catch (err) {
       console.error('Telegram notify error:', err);
     }

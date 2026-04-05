@@ -23,33 +23,48 @@ async function sendTelegramNotification(message: string, chatId: string) {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   const TELEGRAM_API_KEY = Deno.env.get('TELEGRAM_API_KEY');
   
-  if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) {
-    console.warn('Telegram keys not configured, skipping notification');
-    return;
+  if (!LOVABLE_API_KEY) {
+    throw new Error('LOVABLE_API_KEY is not configured');
   }
+
+  if (!TELEGRAM_API_KEY) {
+    throw new Error('TELEGRAM_API_KEY is not configured');
+  }
+
+  const response = await fetch(`${TELEGRAM_GATEWAY_URL}/sendMessage`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'X-Connection-Api-Key': TELEGRAM_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: message,
+      parse_mode: 'HTML',
+    }),
+  });
+
+  const rawText = await response.text();
+  let data: any = null;
 
   try {
-    const response = await fetch(`${TELEGRAM_GATEWAY_URL}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'X-Connection-Api-Key': TELEGRAM_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML',
-      }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      console.error(`Telegram notification failed [${response.status}]:`, data);
-    }
-  } catch (err) {
-    console.error('Telegram notification error:', err);
+    data = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    data = rawText;
   }
+
+  if (!response.ok || (typeof data === 'object' && data?.ok === false)) {
+    const detail = typeof data === 'object' && data
+      ? data.description || data.error || JSON.stringify(data)
+      : rawText || response.statusText;
+
+    throw new Error(`Telegram API call failed [${response.status}]: ${detail}`);
+  }
+
+  return {
+    messageId: data?.result?.message_id ?? null,
+  };
 }
 
 serve(async (req) => {
@@ -87,6 +102,8 @@ serve(async (req) => {
       timestamp,
     };
 
+    let telegramMessageId: number | null = null;
+
     // Send Telegram notification if chatId provided
     if (signal.telegramChatId) {
       const emoji = signal.action === 'BUY' ? '🟢' : signal.action === 'SELL' ? '🔴' : '⚪';
@@ -99,12 +116,16 @@ serve(async (req) => {
         `${signal.reason ? `\n📝 <i>${signal.reason}</i>\n` : ''}` +
         `\n🕐 ${timestamp}`;
       
-      await sendTelegramNotification(telegramMsg, signal.telegramChatId);
+      const telegramResult = await sendTelegramNotification(telegramMsg, signal.telegramChatId);
+      telegramMessageId = telegramResult.messageId;
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      trade: tradeResult 
+      trade: {
+        ...tradeResult,
+        telegramMessageId,
+      } 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
