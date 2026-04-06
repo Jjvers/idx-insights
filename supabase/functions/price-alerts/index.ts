@@ -142,8 +142,15 @@ serve(async (req) => {
         return jsonResponse({ success: false, error: 'telegramChatId is required' }, 400);
       }
 
-      const result = await sendTelegramAlert(message, chatId);
-      return jsonResponse({ success: true, messageId: result.messageId });
+      try {
+        const result = await sendTelegramAlert(message, chatId);
+        return jsonResponse({ success: true, messageId: result.messageId });
+      } catch (tgErr) {
+        const msg = tgErr instanceof Error ? tgErr.message : 'Telegram send failed';
+        console.error("Telegram notify error:", msg);
+        // Return 200 with error so frontend can show a helpful hint instead of generic 500
+        return jsonResponse({ success: false, error: msg });
+      }
     }
 
     return jsonResponse({ success: false, error: 'Invalid action. Use status, notify, or check.' }, 400);
