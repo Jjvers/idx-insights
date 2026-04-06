@@ -103,7 +103,7 @@ export function TelegramSettings({ chatId, onChatIdChange }: TelegramSettingsPro
   };
 
   const copyBotLink = () => {
-    navigator.clipboard.writeText(`https://t.me/${BOT_USERNAME}`);
+    navigator.clipboard.writeText(`https://t.me/${TELEGRAM_BOT_USERNAME}`);
     toast({ title: '📋 Link bot di-copy!' });
   };
 
