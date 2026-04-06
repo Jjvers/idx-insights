@@ -33,8 +33,16 @@ export function getTelegramSetupHint(errorMessage?: string) {
     return 'Chat ID belum valid. Ambil ulang dari @userinfobot lalu pastikan angkanya sama persis.';
   }
 
-  if (normalizedError.includes("bot can't initiate conversation") || normalizedError.includes('forbidden')) {
+  if (normalizedError.includes('blocked by the user')) {
+    return `Bot @${TELEGRAM_BOT_USERNAME} sedang diblokir di chat tujuan. Buka chat botnya di Telegram, tekan Unblock lalu Start, setelah itu test ulang.`;
+  }
+
+  if (normalizedError.includes("bot can't initiate conversation")) {
     return `Klik Start di @${TELEGRAM_BOT_USERNAME}, atau kalau pakai grup tambahkan bot ke grup lalu kirim 1 pesan dulu sebelum test ulang.`;
+  }
+
+  if (normalizedError.includes('forbidden')) {
+    return `Bot belum punya izin kirim ke chat ini. Untuk personal, klik Start di @${TELEGRAM_BOT_USERNAME}. Untuk grup, tambahkan bot ke grup lalu kirim 1 pesan dulu.`;
   }
 
   if (normalizedError.includes('not configured') || normalizedError.includes('unauthorized')) {
